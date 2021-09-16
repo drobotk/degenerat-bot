@@ -1,2 +1,2 @@
-main: python3 bot.py
-web: python3 webapp.py
+main: python bot.py
+web: python webapp.py
