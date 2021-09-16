@@ -22,7 +22,6 @@ from fixed_shit import SlashCommand
 
 intents = discord.Intents.default()
 intents.members = True
-intents.messages = False
 
 bot = Bot( command_prefix = ',', self_bot = True, help_command = None, intents = intents, activity = discord.Game('Bartek to gej') )
 
@@ -539,10 +538,10 @@ class MusicQueue:
         return self._cleared
 
 class MusicQueueEntry:
-    def __init__( self, title, audio_source, embed, after = None ):
+    def __init__( self, title, audio_source, message, after = None ):
         self.title = title
         self.audio_source = audio_source
-        self.embed = embed
+        self.message = message
         self.after = after
         
     def cleanup( self ):  
@@ -604,10 +603,11 @@ async def play( ctx, q : str ):
             e = discord.Embed( description = q, color = discord.Color.blurple() )
             e.title = 'Odtwarzanie' if queue.empty else 'Dodano do kolejki'
             
-            entry = MusicQueueEntry( q, audio, e )
+            msg = await ctx.send( embed = e )
+            
+            entry = MusicQueueEntry( q, audio, msg )
             queue.add_entry( entry )
             
-            await ctx.send( embed = e )
 
     else: # Search query
         e = discord.Embed( description = f'Wyszukiwanie `{ q }`...', color = discord.Color.blurple() )
@@ -711,7 +711,7 @@ async def queue_youtube( ctx, queue, url, session = None ):
     e.description = title
     e.title = 'Odtwarzanie' if queue.empty else 'Dodano do kolejki'
     
-    entry = MusicQueueEntry( title, audio, e, after )
+    entry = MusicQueueEntry( title, audio, ctx.message, after )
     queue.add_entry( entry )
 
     await ctx.message.edit( embed = e )
@@ -733,10 +733,14 @@ async def MusicQueuesUpdate():
             
         queue.vc.play( next.audio_source, after = next.after )
         
-        e = next.embed
+        msg = next.message
+        e = msg.embeds[ 0 ]
         if e.title != 'Odtwarzanie':
             e.title = 'Odtwarzanie'
-            await queue.message_channel.send( embed = e )
+            if queue.message_channel.last_message_id == msg.id:
+                await msg.edit( embed = e )
+            else:
+                await queue.message_channel.send( embed = e )
 
 @bot.event
 async def on_voice_state_update( member, before, after ):
