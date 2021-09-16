@@ -1,0 +1,8 @@
+discord.py==1.7.1
+async_property==0.2.1
+git+https://github.com/msemple1111/pytube
+pyfiglet==0.8.post1
+aiohttp==3.7.4.post0
+discord_py_interactions==3.0.2
+aiofiles==0.7.0
+discord==1.7.3
