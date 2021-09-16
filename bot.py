@@ -13,6 +13,7 @@ import aiohttp
 import aiofiles
 import unicodedata
 import base64
+import asyncssh
 from pyfiglet import Figlet
 from xml.dom.minidom import parseString
 from urllib.parse import urlparse
@@ -27,11 +28,7 @@ intents.messages = False # slash commands swag
 
 bot = Bot( command_prefix = ',', self_bot = True, help_command = None, intents = intents, activity = discord.Game('Bartek to gej') )
 
-ext_commands = [
-    {'name': 'stoi', 'description': 'Sprawdza czy kutas stoi', 'options': [], 'default_permission': True, 'permissions': {}, 'type': 1 }
-]
-
-slash = SlashCommand( bot, sync_commands = ( len( sys.argv ) > 1 and sys.argv[ 1 ] == 'sync'), ext_commands = ext_commands )
+slash = SlashCommand( bot, sync_commands = True )
 
 @bot.event
 async def on_ready():
@@ -44,7 +41,24 @@ async def on_ready():
 async def on_guild_join( guild ):
     print(f'Joined { str( guild ) } - syncing commands')
     await slash.sync_all_commands()
-        
+
+sshopts = asyncssh.SSHClientConnectionOptions( known_hosts = None, username = "degenerat-stoi", password = "japierdole")
+
+@slash.slash( name = 'stoi', description = 'Sprawdza czy kutas stoi')
+async def stoi( ctx ):
+    await ctx.defer()
+
+    try:
+        async with asyncssh.connect('62.122.235.235', port = 2200, options = sshopts ) as _:
+            await ctx.send('**Tak :white_check_mark:**')
+    
+    except Exception as e:
+        print( e )
+        if ctx.guild.get_member( 473849794381611021 ):
+            await ctx.send('**Nie :x: <@473849794381611021> :exclamation:**')
+        else:
+            await ctx.send('**Nie :x:**')
+
 # @slash.slash(
     # name = 'jebac',
     # description = 'Mówi spierdalaj debilowi',
