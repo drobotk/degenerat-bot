@@ -23,7 +23,7 @@ from fixed_shit import SlashCommand
 intents = discord.Intents.default()
 intents.members = True
 
-bot = Bot( command_prefix = ',', self_bot = True, help_command = None, intents = intents, activity = discord.Game('Bartek to gej') )
+bot = Bot( command_prefix = ',', self_bot = True, help_command = None, intents = intents, activity = discord.ActivityType.watching, name = 'mcskelli hentai') )
 
 slash = SlashCommand( bot, sync_commands = True )
 
