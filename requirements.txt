@@ -8,3 +8,4 @@ discord_py_interactions==3.0.2
 aiofiles==0.7.0
 discord==1.7.3
 PyNaCl
+asyncssh
