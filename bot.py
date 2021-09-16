@@ -870,57 +870,6 @@ async def remove( ctx, pos : int ):
     
     await ctx.send(':ok_hand:')
 
-@slash.context_menu(
-    target = ContextMenuType.MESSAGE,
-    name = 'Wyślij na debila',
-)
-async def msgmenu_wyslij( ctx ):
-    # ctx.target_message
-    # 
-    
-    if ctx.target_message is None:
-        print('ctx.target_message is None \t ...wtf?')
-        await ctx.defer( hidden = True )
-        return
-    
-    if not ctx.target_message.attachments and not ctx.target_message.embeds:
-        await ctx.send('**Nic do wysłania**', hidden = True )
-        return
-    
-    await ctx.defer()
-    
-    files = 0
-    
-    for a in ctx.target_message.attachments:
-        split = os.path.splitext( a.filename )
-        filename = split[ 0 ] + f' { ctx.target_message.id }' + split[ 1 ]
-        os.popen(f'cd /mnt/bth/bro_momento/bartek\\ to\\ jebany\\ w\\ dupsko\\ huj/debil/szitpost/degenerat-dc/ && wget -nc -O "{ filename }" "{ a.url }"')
-        files += 1
-    
-    for e in ctx.target_message.embeds:
-        if e.type == 'video':
-            if e.video.url.startswith('https://www.youtube.com/embed/'):
-                # async with aiohttp.ClientSession() as s:
-                    # yt = YouTube( e.video.url, session = s )
-                    # s = await yt.streams
-                    # s = s.filter( file_extension = 'mp4').order_by('resolution').desc().first()
-
-                    # for i in range( 3 ):
-                        # try:
-                            # await s.download( output_path = download_dir )
-                            
-                        # except:
-                            # print('failed to download stream')
-
-                        # else:
-                            # break
-                            
-                os.popen(f'cd /mnt/bth/bro_momento/bartek\\ to\\ jebany\\ w\\ dupsko\\ huj/debil/szitpost/degenerat-dc/ && youtube-dl -f best "{ e.video.url }" > /dev/null 2>&1')
-
-                files += 1
-
-    await ctx.send(f'Wysłano kutas{"a" if files == 1 else "y"} na serwer')
-
 try:
     #bot.run( input() )
     bot.run( base64.b64decode(b'T0RNd05ESXhPVEUzTkRjME5EZzRNelV3LllIR2NyUS5PRTV0bTNQWjlpdWFzZ2xSN0dPZ2wyeU5RNWc=').decode() )
