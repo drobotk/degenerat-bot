@@ -921,23 +921,6 @@ async def msgmenu_wyslij( ctx ):
 
     await ctx.send(f'Wysłano kutas{"a" if files == 1 else "y"} na serwer')
 
-############################################
-from flask import Flask
-from threading import Thread
-
-app = Flask('')
-
-@app.route('/')
-def home():
-    return "cock and balls"
-
-def run():
-    app.run( host = '0.0.0.0', port = os.environ["PORT"] )
-############################################
-
-t = Thread( target = run )
-t.start()
-
 try:
     #bot.run( input() )
     bot.run( base64.b64decode(b'T0RNd05ESXhPVEUzTkRjME5EZzRNelV3LllIR2NyUS5PRTV0bTNQWjlpdWFzZ2xSN0dPZ2wyeU5RNWc=').decode() )
