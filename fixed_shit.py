@@ -31,12 +31,15 @@ class OptionData2( model.OptionData ):
                 raise error.IncorrectCommandData(
                     "Options are required for subcommands / subcommand groups"
                 )
+                
+    def __eq__(self, other):
+        return isinstance(other, OptionData2) and self.__dict__ == other.__dict__
 
 class CommandData2( model.CommandData ):
     def __init__(
         self,
         name,
-        description=None,
+        description='',
         options=None,
         default_permission=True,
         id=None,
@@ -46,7 +49,7 @@ class CommandData2( model.CommandData ):
     ):
         self.name = name
         self.description = description
-        self.default_permission = default_permission
+        self.default_permission = True if default_permission == None else default_permission
         self.id = id
         self.application_id = application_id
         self.version = version
@@ -54,6 +57,17 @@ class CommandData2( model.CommandData ):
         if options is not None:
             for option in options:
                 self.options.append(OptionData2(**option))
+                
+    def __eq__(self, other):
+        if isinstance(other, CommandData2):
+            return (
+                self.name == other.name
+                and self.description == other.description
+                and self.options == other.options
+                and self.default_permission == other.default_permission
+            )
+        else:
+            return False
 
 # sub class to change sync_all_commands to just sync global commands to all guilds and to add ext_commands
 class SlashCommand( OldSlashCommand ):
@@ -166,6 +180,7 @@ class SlashCommand( OldSlashCommand ):
 
             if len(new_cmds) != len(existing_cmds):
                 changed = True
+                print("1 changed")
             
             for command in new_cmds:
                 cmd_name = command["name"]
@@ -177,7 +192,11 @@ class SlashCommand( OldSlashCommand ):
                         
                     if cmd_data != existing_cmd:
                         changed = True
+                        print("2 changed")
                         #print(vars(cmd_data),vars(existing_cmd))
+                        print(cmd_data.__dict__)
+                        print(existing_cmd.__dict__)
+                        print()
                         #print(cmd_data.options.__dict__,existing_cmd.options.__dict__)
                         to_send.append(command)
                     else:
@@ -186,6 +205,7 @@ class SlashCommand( OldSlashCommand ):
                         to_send.append(command_with_id)
                 else:
                     changed = True
+                    print("3 changed")
                     to_send.append(command)
 
             if changed:
@@ -193,7 +213,8 @@ class SlashCommand( OldSlashCommand ):
                     f"Detected changes on {scope if scope is not None else 'global'}, updating them"
                 )
                 try:
-                    print("sync: ", scope, to_send)
+                    #print("sync: ", scope, to_send)
+                    print("sync: ", scope)
                     existing_cmds = await self.req.put_slash_commands(
                         slash_commands=to_send, guild_id=scope
                     )
