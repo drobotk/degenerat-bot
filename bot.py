@@ -10,7 +10,6 @@ import io
 import sys
 import math
 import aiohttp
-import aiofiles
 import unicodedata
 import base64
 import asyncssh
@@ -18,13 +17,12 @@ from pyfiglet import Figlet
 from xml.dom.minidom import parseString
 from urllib.parse import urlparse
 
-#from pytube import YouTube
 from fixed_shit import YouTube
 from fixed_shit import SlashCommand
 
 intents = discord.Intents.default()
 intents.members = True
-intents.messages = False # slash commands swag
+intents.messages = False
 
 bot = Bot( command_prefix = ',', self_bot = True, help_command = None, intents = intents, activity = discord.Game('Bartek to gej') )
 
@@ -58,21 +56,6 @@ async def stoi( ctx ):
             await ctx.send('**Nie :x: <@473849794381611021> :exclamation:**')
         else:
             await ctx.send('**Nie :x:**')
-
-# @slash.slash(
-    # name = 'jebac',
-    # description = 'Mówi spierdalaj debilowi',
-    # options = [
-        # create_option(
-            # name = 'debil',
-            # description = 'Debil, którego jebać',
-            # option_type = 6,
-            # required = True
-        # )
-    # ]
-# )
-# async def jebac( ctx, debil : discord.User ):  
-    # await ctx.send(f'Spierdalaj { debil.mention }\t' * 32 )
 
 def robert_kurwa( arg ):
     return unicodedata.normalize('NFKD', arg ).encode('utf-8', 'ignore').decode('utf-8')
@@ -884,12 +867,15 @@ async def remove( ctx, pos : int ):
     
     await ctx.send(':ok_hand:')
 
+@slash.slash( name = 'ping', description = 'Test bota')
+async def ping( ctx ):
+    await ctx.send(f'Pong! Latency: { bot.latency * 1000 } ms')
+
 try:
-    #bot.run( input() )
     bot.run( base64.b64decode(b'T0RNd05ESXhPVEUzTkRjME5EZzRNelV3LllIR2NyUS5PRTV0bTNQWjlpdWFzZ2xSN0dPZ2wyeU5RNWc=').decode() )
     
 except:
-    pass
+    raise
     
 finally:
     print('\nCleanup')
