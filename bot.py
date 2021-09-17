@@ -711,9 +711,9 @@ async def queue_youtube( ctx, queue, url, session = None ):
     e.description = title
     e.title = 'Odtwarzanie' if queue.empty else 'Dodano do kolejki'
     
-    msg = await ctx.message.edit( embed = e )
+    await ctx.message.edit( embed = e )
     
-    entry = MusicQueueEntry( title, audio, msg, after )
+    entry = MusicQueueEntry( title, audio, ctx.message, after )
     queue.add_entry( entry )
 
 @tasks.loop( seconds = 3.0 )
