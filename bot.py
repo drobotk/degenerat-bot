@@ -876,7 +876,7 @@ async def ping( ctx ):
     await ctx.send(f'**Pong!** Latency: { math.floor( bot.latency * 1000 ) } ms')
 
 try:
-    bot.run( base64.b64decode(b'T0RNd05ESXhPVEUzTkRjME5EZzRNelV3LllIR2NyUS5PRTV0bTNQWjlpdWFzZ2xSN0dPZ2wyeU5RNWc=').decode() )
+    bot.run( base64.b64decode( os.environ["cep"].encode() ).decode() )
     
 except:
     raise
