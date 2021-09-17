@@ -691,7 +691,7 @@ async def queue_youtube( ctx, queue, url, session = None ):
 
     for i in range( 3 ):
         try:
-            path = await s.download( filename = str( ctx.message.id ) )
+            path = await s.download( filename = str( ctx.message.id ), skip_existing = False )
             
         except:
             print('failed to download stream')
