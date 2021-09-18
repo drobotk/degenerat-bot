@@ -655,6 +655,8 @@ async def queue_youtube( ctx, queue, url, session = None ):
         await reply( content = str( e ) )
         return
 
+    title = await yt.title
+
     try:
         s = await yt.streams
         if len( s ) < 1:
@@ -665,7 +667,7 @@ async def queue_youtube( ctx, queue, url, session = None ):
             raise Exception()
         
     except:
-        e = discord.Embed( description = f'Brak dostępnych streamów audio dla: `{ url }`', color = discord.Color.blurple() )
+        e = discord.Embed( description = f'{ title } ({ url }): **Brak dostępnych streamów audio**', color = discord.Color.blurple() )
         await reply( embed = e )
         return
     
@@ -674,11 +676,10 @@ async def queue_youtube( ctx, queue, url, session = None ):
     else:
         s = s.first()
 
-    title = await yt.title
     filesize = await s.filesize
 
     if filesize > 10_000_000:
-        e = discord.Embed( description = f'{ title }: Rozmiar pliku przekracza rozsądny limit 10MB', color = discord.Color.blurple() )
+        e = discord.Embed( description = f'{ title } ({ url }): **Rozmiar pliku przekracza rozsądny limit 10MB**', color = discord.Color.blurple() )
         await reply( embed = e )
         return
 
