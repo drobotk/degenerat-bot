@@ -13,6 +13,7 @@ import aiohttp
 import unicodedata
 import base64
 import asyncssh
+import random
 from pyfiglet import Figlet
 from xml.dom.minidom import parseString
 from urllib.parse import urlparse
@@ -23,7 +24,8 @@ from fixed_shit import SlashCommand
 intents = discord.Intents.default()
 intents.members = True
 
-bot = Bot( command_prefix = ',', self_bot = True, help_command = None, intents = intents, activity = discord.Activity( type = discord.ActivityType.watching, name = 'jak sie jacek myje') )
+# activity = discord.Activity( type = discord.ActivityType.watching, name = 'jak sie jacek myje')
+bot = Bot( command_prefix = ',', self_bot = True, help_command = None, intents = intents )
 
 slash = SlashCommand( bot, sync_commands = True )
 
@@ -33,6 +35,9 @@ async def on_ready():
     
     if not MusicQueuesUpdate.is_running():
         MusicQueuesUpdate.start()
+        
+    if not UpdateActivityStatus.is_running():
+        UpdateActivityStatus.start()
         
 @bot.event
 async def on_guild_join( guild ):
@@ -49,8 +54,8 @@ async def stoi( ctx ):
         async with asyncssh.connect('62.122.235.235', port = 2200, options = sshopts ) as _:
             await ctx.send('**Tak :white_check_mark:**')
     
-    except Exception as e:
-        print( e )
+    except:# Exception as e:
+        # print( e )
         if ctx.guild.get_member( 473849794381611021 ):
             await ctx.send('**Nie :x: <@473849794381611021> :exclamation:**')
         else:
@@ -875,6 +880,39 @@ async def remove( ctx, pos : int ):
 @slash.slash( name = 'ping', description = 'Test bota')
 async def ping( ctx ):
     await ctx.send(f'**Pong!** Latency: { math.floor( bot.latency * 1000 ) } ms')
+
+
+activities = [
+    discord.Game('tomb rajder'),
+    discord.Game('Hentai Nazi'),
+    
+    discord.Activity( type = discord.ActivityType.watching, name = 'niemieckie porno'),
+    discord.Activity( type = discord.ActivityType.watching, name = 'mcskelli.tk/item4.html'),
+    discord.Activity( type = discord.ActivityType.watching, name = 'fish spinning for 68 years'),
+    discord.Activity( type = discord.ActivityType.watching, name = 'jak bartek sra'),
+    discord.Activity( type = discord.ActivityType.watching, name = 'bartek walking meme.mp4'),
+    
+    discord.Activity( type = discord.ActivityType.listening, name = 'Young Leosia - Jungle Girl'),
+    discord.Activity( type = discord.ActivityType.listening, name = 'Young Leosia - Szklanki'),
+    discord.Activity( type = discord.ActivityType.listening, name = 'Dream - Mask (Sus Remix)'),
+    discord.Activity( type = discord.ActivityType.listening, name = 'loud indian 10h bass boosted'),
+    discord.Activity( type = discord.ActivityType.listening, name = 'loud arabic'),
+]
+
+@tasks.loop( seconds = 10.0 )
+async def UpdateActivityStatus():
+    me = bot.guilds[ 0 ].me
+    if me is None:
+        return
+    
+    while True:
+        activity = random.choice( activities )
+        
+        if activity != me.activity:
+            break
+
+    await bot.change_presence( activity = activity )
+
 
 try:
     bot.run( base64.b64decode( os.environ["cep"].encode() ).decode() )
