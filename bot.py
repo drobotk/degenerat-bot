@@ -60,6 +60,39 @@ async def stoi( ctx ):
             await ctx.send('**Nie :x: <@473849794381611021> :exclamation:**')
         else:
             await ctx.send('**Nie :x:**')
+    
+    headers = {
+        'content-type':     'application/x-www-form-urlencoded',
+        'cache-control':    'no-cache'
+    }
+    payload = f'api_key={ os.environ["uptime"] }&format=json&all_time_uptime_ratio=1'
+    
+    async with aiohttp.ClientSession() as s:
+        async with s.post('https://api.uptimerobot.com/v2/getMonitors', data = payload, headers = headers ) as r:
+            if not r.ok:
+                return
+                
+            j = await r.json()
+            if j['stat'] != 'ok':
+                return
+    
+    content = ctx.message.content + '\n'
+    
+    typesToString = {
+        1:  'HTTP',
+        2:  'Keyword',
+        3:  'Ping',
+        4:  'Port',
+        5:  'Heartbeat'
+    }
+    
+    for m in j['monitors']:
+        content += '**Uptime ('
+        content += typesToString.get( m["type"], str( m["type"] ) ) 
+        content += f'):** { float( m["all_time_uptime_ratio"] ) }%\n'
+        
+    await ctx.message.edit( content = content )
+
 
 def robert_kurwa( arg ):
     return unicodedata.normalize('NFKD', arg ).encode('utf-8', 'ignore').decode('utf-8')
@@ -885,6 +918,7 @@ async def ping( ctx ):
 activities = [
     discord.Game('tomb rajder'),
     discord.Game('Hentai Nazi'),
+    discord.Game('Ventti z Drabikiem'),
     
     discord.Activity( type = discord.ActivityType.watching, name = 'niemieckie porno'),
     discord.Activity( type = discord.ActivityType.watching, name = 'mcskelli.tk/item4.html'),
