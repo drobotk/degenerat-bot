@@ -21,6 +21,8 @@ from urllib.parse import urlparse
 from fixed_shit import YouTube
 from fixed_shit import SlashCommand
 
+import cowsay
+
 intents = discord.Intents.default()
 intents.members = True
 
@@ -914,6 +916,33 @@ async def remove( ctx, pos : int ):
 async def ping( ctx ):
     await ctx.send(f'**Pong!** Latency: { math.floor( bot.latency * 1000 ) } ms')
 
+@slash.slash(
+    name = 'cow',
+    description = 'Cowsay lmao',
+    options = [
+        create_option(
+            name = 'text',
+            description = 'Tekst do wypowiedzenia',
+            option_type = 3,
+            required = True
+        )
+    ]
+)
+async def cow( ctx, text : str ):
+    txt = robert_kurwa( text )
+    msg = cowsay.get_output_string("cow", txt ).replace('`', '\'')
+    msg = '```\n' + msg[ :1992 ] + '\n```'
+    await ctx.send( msg )
+    
+@slash.context_menu(
+    target = ContextMenuType.MESSAGE,
+    name = 'Cowsay',
+)
+async def msgmenu_cow( ctx ):
+    if ctx.target_message.content:
+        await cow.func( ctx, ctx.target_message.content )
+    else:
+        await ctx.send('**Błąd: Wiadomość bez treści**', hidden = True )
 
 activities = [
     discord.Game('tomb rajder'),

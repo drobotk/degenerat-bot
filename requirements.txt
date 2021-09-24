@@ -9,3 +9,4 @@ aiofiles==0.7.0
 discord==1.7.3
 PyNaCl
 asyncssh
+cowsay
