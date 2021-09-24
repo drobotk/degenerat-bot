@@ -916,33 +916,40 @@ async def remove( ctx, pos : int ):
 async def ping( ctx ):
     await ctx.send(f'**Pong!** Latency: { math.floor( bot.latency * 1000 ) } ms')
 
-@slash.slash(
-    name = 'cow',
-    description = 'Cowsay lmao',
-    options = [
-        create_option(
-            name = 'text',
-            description = 'Tekst do wypowiedzenia',
-            option_type = 3,
-            required = True
-        )
-    ]
-)
-async def cow( ctx, text : str ):
-    txt = robert_kurwa( text )
-    msg = cowsay.get_output_string("cow", txt ).replace('`', '\'')
+@slash.slash( name = 'cow', description = 'Mądrości krowy')
+async def cow( ctx ):
+    await ctx.defer()
+    
+    async with aiohttp.ClientSession() as s:
+        async with s.get('https://evilinsult.com/generate_insult.php?lang=en&type=json') as r:
+            if not r.ok:
+                await ctx.send(f"**Error:** insult status code { r.status }")
+                return
+                
+            j = await r.json()
+            
+        english = j['insult']
+        
+        params = {
+            'client':   'gtx',
+            'dt':       't',
+            'sl':       'en',
+            'tl':       'pl',
+            'q':        english
+        }
+        
+        async with s.get('https://translate.googleapis.com/translate_a/single', params = params ) as r:
+            if not r.ok:
+                await ctx.send(f"**Error:** translate status code { r.status }")
+                return
+                
+            j = await r.json()
+            
+        polish = j[0][0][0]
+            
+    msg = cowsay.get_output_string("cow", polish ).replace('`', '\'')
     msg = '```\n' + msg[ :1992 ] + '\n```'
     await ctx.send( msg )
-    
-@slash.context_menu(
-    target = ContextMenuType.MESSAGE,
-    name = 'Cowsay',
-)
-async def msgmenu_cow( ctx ):
-    if ctx.target_message.content:
-        await cow.func( ctx, ctx.target_message.content )
-    else:
-        await ctx.send('**Błąd: Wiadomość bez treści**', hidden = True )
 
 activities = [
     discord.Game('tomb rajder'),
