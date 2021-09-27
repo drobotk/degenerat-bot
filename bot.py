@@ -724,6 +724,7 @@ async def queue_youtube( ctx, queue, url, session = None ):
 
     e = discord.Embed( description = 'Pobierańsko...', color = discord.Color.blurple() )
     e.set_thumbnail( url = f'https://i.ytimg.com/vi/{ yt.video_id }/mqdefault.jpg')
+    e.set_footer( text = url )
     
     await reply( embed = e )
 
