@@ -690,12 +690,11 @@ async def queue_youtube( ctx, queue, url, session = None ):
 
     try:
         yt = YouTube( url, session = session )
+        title = await yt.title
         
     except Exception as e:
         await reply( content = str( e ) )
         return
-
-    title = await yt.title
 
     try:
         s = await yt.streams

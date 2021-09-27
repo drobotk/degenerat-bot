@@ -1,2 +1,4 @@
 __pycache__/
 *.webm
+*.sh
+*.json
