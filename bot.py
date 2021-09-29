@@ -945,7 +945,7 @@ async def cow( ctx ):
                 
             j = await r.json()
             
-        polish = j[0][0][0]
+    polish = ''.join( [ a[0] for a in j[0] ] ) # jebać czytelność, zjebany internal endpoint
             
     msg = cowsay.get_output_string("cow", polish ).replace('`', '\'')
     msg = '```\n' + msg[ :1992 ] + '\n```'
