@@ -698,11 +698,11 @@ async def msgmenu_play( ctx ):
             await play.func( ctx, url )
             return
             
-        elif e.description:
-            await play.func( ctx, e.description )
+        elif e.description or e.title:
+            await play.func( ctx, e.description or e.title )
             return
-       
-    await ctx.send('**Błąd: Wiadomość bez treści**', hidden = True )
+
+    await ctx.send('**Błąd: Nie wykryto pasującej treści**', hidden = True )
 
 async def queue_youtube( ctx, queue, url, session = None ):
     reply = ctx.message.edit if ctx.message else ctx.send
