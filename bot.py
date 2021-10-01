@@ -136,7 +136,7 @@ async def oblicz( ctx, expr : str ):
     if ctx.author.id != 360781251579346944:
         ctx.bot = None
     
-    glbls = { **vars( base64 ), **vars( math ), 'Embed': discord.Embed }
+    glbls = { **vars( base64 ), **vars( math ), 'discord': discord }
     lcls = {'ctx': ctx, 'expr': expr }
 
     try:
