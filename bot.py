@@ -687,19 +687,22 @@ async def play( ctx, q : str ):
 async def msgmenu_play( ctx ):
     if ctx.target_message.content:
         await play.func( ctx, ctx.target_message.content )
+        return
         
     elif ctx.target_message.embeds:
         e = ctx.target_message.embeds[0]
         text = str( e.to_dict() )
+        
         url = extract_yt_url( text )
         if url:
             await play.func( ctx, url )
+            return
             
         elif e.description:
             await play.func( ctx, e.description )
-        
-    else:
-        await ctx.send('**Błąd: Wiadomość bez treści**', hidden = True )
+            return
+       
+    await ctx.send('**Błąd: Wiadomość bez treści**', hidden = True )
 
 async def queue_youtube( ctx, queue, url, session = None ):
     reply = ctx.message.edit if ctx.message else ctx.send
