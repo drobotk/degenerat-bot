@@ -601,6 +601,15 @@ def is_url( x ):
     except:
         return False
 
+def extract_yt_url( text ):
+    at = text.find('/watch?v=')
+    if at > -1:
+        return 'https://www.youtube.com' + text[ at:at+20 ]
+    
+    at = text.find('youtu.be/')
+    if at > -1:
+        return 'https://www.youtube.com/watch?v=' + text[ at+9:at+20 ]
+    
 @slash.slash(
     name = 'play',
     description = 'Odtwarza muzykę w twoim kanale głosowym',
@@ -661,16 +670,14 @@ async def play( ctx, q : str ):
                     return
                     
                 text = await r.text()
-                
-            at = text.find('/watch?v=')
-            if at == -1:
+            
+            url = extract_yt_url( text )
+            if not url:
                 e = discord.Embed( description = f'Brak wyników wyszukiwania dla: `{ q }`', color = discord.Color.blurple() )
                 
                 await ctx.message.edit( embed = e )
                 return
-            
-            url = 'https://www.youtube.com' + text[ at:at + 20 ]
-            
+
             await queue_youtube( ctx, queue, url, s )
             
 @slash.context_menu(
@@ -680,8 +687,17 @@ async def play( ctx, q : str ):
 async def msgmenu_play( ctx ):
     if ctx.target_message.content:
         await play.func( ctx, ctx.target_message.content )
-    elif ctx.target_message.embeds and ctx.target_message.embeds[0].description:
-        await play.func( ctx, ctx.target_message.embeds[0].description )
+        
+    elif ctx.target_message.embeds:
+        e = ctx.target_message.embeds[0]
+        text = str( e.to_dict() )
+        url = extract_yt_url( text )
+        if url:
+            await play.func( ctx, url )
+            
+        elif e.description:
+            await play.func( ctx, e.description )
+        
     else:
         await ctx.send('**Błąd: Wiadomość bez treści**', hidden = True )
 
