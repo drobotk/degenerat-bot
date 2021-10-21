@@ -696,7 +696,7 @@ async def play( ctx, q : str ):
             
             url = extract_yt_url( text )
             if not url:
-                e = discord.Embed( description = f'Brak wyników wyszukiwania dla: `{ q }`', color = discord.Color.blurple() )
+                e = discord.Embed( description = f'Brak wyników wyszukiwania dla: `{ q }`', color = discord.Color.red() )
                 
                 await ctx.message.edit( embed = e )
                 return
@@ -748,7 +748,7 @@ async def queue_youtube( ctx, queue, url, session = None ):
             raise Exception()
         
     except:
-        e = discord.Embed( description = f'{ title } ({ url }): **Brak dostępnych streamów audio**', color = discord.Color.blurple() )
+        e = discord.Embed( description = f'{ title } ({ url }): **Brak dostępnych streamów audio**', color = discord.Color.red() )
         await reply( embed = e )
         return
     
@@ -760,7 +760,7 @@ async def queue_youtube( ctx, queue, url, session = None ):
     filesize = await s.filesize
 
     if filesize > 10_000_000:
-        e = discord.Embed( description = f'{ title } ({ url }): **Rozmiar pliku przekracza rozsądny limit 10MB**', color = discord.Color.blurple() )
+        e = discord.Embed( description = f'{ title } ({ url }): **Rozmiar pliku przekracza rozsądny limit 10MB**', color = discord.Color.red() )
         await reply( embed = e )
         return
 
