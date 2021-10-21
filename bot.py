@@ -748,7 +748,7 @@ async def queue_youtube( ctx, queue, url, session = None ):
             raise Exception()
         
     except:
-        e = discord.Embed( description = f'{ title } ({ url }): **Brak dostępnych streamów audio**', color = discord.Color.red() )
+        e = discord.Embed( title = f'**Brak dostępnych streamów audio**', description = f'{ title }\n({ url })', color = discord.Color.red() )
         await reply( embed = e )
         return
     
@@ -760,7 +760,7 @@ async def queue_youtube( ctx, queue, url, session = None ):
     filesize = await s.filesize
 
     if filesize > 10_000_000:
-        e = discord.Embed( description = f'{ title } ({ url }): **Rozmiar pliku przekracza rozsądny limit 10MB**', color = discord.Color.red() )
+        e = discord.Embed( title = f'**Rozmiar pliku przekracza rozsądny limit 10MB**', description = f'{ title }\n({ url })', color = discord.Color.red() )
         await reply( embed = e )
         return
 
@@ -784,7 +784,8 @@ async def queue_youtube( ctx, queue, url, session = None ):
             break
         
     if errors == 3:
-        await ctx.message.edit( content = 'Wystąpił błąd podczas pobierania pliku. (dawid to cep)')
+        e = discord.Embed( title = f'**Wystąpił błąd podczas pobierania pliku**', description = f'{ title }\n({ url })', color = discord.Color.red() )
+        await ctx.message.edit( embed = e )
         return
         
     after = lambda e: os.remove( path )
