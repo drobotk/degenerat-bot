@@ -26,7 +26,6 @@ import cowsay
 intents = discord.Intents.default()
 intents.members = True
 
-# activity = discord.Activity( type = discord.ActivityType.watching, name = 'jak sie jacek myje')
 bot = Bot( command_prefix = ',', help_command = None, intents = intents )
 
 slash = SlashCommand( bot, sync_commands = True )
@@ -46,40 +45,29 @@ async def on_guild_join( guild ):
     print(f'Joined { str( guild ) } - syncing commands')
     await slash.sync_all_commands()
 
-sshopts = asyncssh.SSHClientConnectionOptions( known_hosts = None, username = "degenerat-stoi", password = "japierdole")
+sshopts = asyncssh.SSHClientConnectionOptions( known_hosts = None, username = "degenerat-stoi", password = "japierdole", login_timeout = 10 )
 
 @slash.slash( name = 'stoi', description = 'Sprawdza czy kutas stoi')
 async def stoi( ctx ):
     await ctx.defer()
 
+    e = discord.Embed()
+
     try:
         async with asyncssh.connect('62.122.235.235', port = 2200, options = sshopts ) as _:
-            await ctx.send('**Tak :white_check_mark:**')
+            e.color = discord.Color.green()
+            e.title = '**Tak :white_check_mark:**'
     
-    except:# Exception as e:
-        # print( e )
+    except:
+        e.color = discord.Color.red()
+        e.title = '**Nie :x:**'
+        
         if ctx.guild.get_member( 473849794381611021 ):
-            await ctx.send('**Nie :x: <@473849794381611021> :exclamation:**')
-        else:
-            await ctx.send('**Nie :x:**')
+            e.title += '<@473849794381611021> :exclamation:'
     
-    headers = {
-        'content-type':     'application/x-www-form-urlencoded',
-        'cache-control':    'no-cache'
-    }
-    payload = f'api_key={ os.environ["uptime"] }&format=json&all_time_uptime_ratio=1'
-    
-    async with aiohttp.ClientSession() as s:
-        async with s.post('https://api.uptimerobot.com/v2/getMonitors', data = payload, headers = headers ) as r:
-            if not r.ok:
-                return
-                
-            j = await r.json()
-            if j['stat'] != 'ok':
-                return
-    
-    content = ctx.message.content + '\n'
-    
+    finally:
+        await ctx.send( embed = e )
+
     typesToString = {
         1:  'HTTP',
         2:  'Keyword',
@@ -88,12 +76,47 @@ async def stoi( ctx ):
         5:  'Heartbeat'
     }
     
+    async with aiohttp.ClientSession() as s:
+        async with s.post('https://api.uptimerobot.com/v2/getMonitors', data = f'api_key={ os.environ["uptime"] }&format=json&logs=1', headers = {'content-type':'application/x-www-form-urlencoded','cache-control':'no-cache'} ) as r:
+            if not r.ok:
+                return
+                
+            j = await r.json()
+            if j['stat'] != 'ok':
+                print( j )
+                return
+
     for m in j['monitors']:
-        content += '**Uptime ('
-        content += typesToString.get( m["type"], str( m["type"] ) ) 
-        content += f'):** { float( m["all_time_uptime_ratio"] ) }%\n'
+        typ = typesToString.get( m["type"], str( m["type"] ) )
+        status = m['logs'][0]['reason']['detail']
         
-    await ctx.message.edit( content = content )
+        dur = m['logs'][0]['duration']
+        
+        days = math.floor( dur / 86400 )
+        dur = dur % 86400
+        hours = math.floor( dur / 3600 )
+        dur = dur % 3600
+        mins = math.floor( dur / 60 )
+        secs = dur % 60
+        
+        dur = ''
+        if days:
+            dur += f'{ days }d '
+        
+        if hours or days:
+            dur += f'{ hours }h '
+            
+        if mins or hours or days:
+            dur += f'{ mins }m '
+        
+        if secs or mins or hours or days:
+            dur += f'{ secs }s'
+        
+        e.add_field( name = typ, value = f'**{ status }** - { dur }', inline = False )
+    
+    e.description = '_ _'
+    
+    await ctx.message.edit( embed = e )
 
 
 def robert_kurwa( arg ):
