@@ -132,6 +132,12 @@ illegal_keywords = [
     'token',
 ]
 
+class Bartek:
+    def __init__( self ):
+        self.masa = float('inf')
+
+bartek = Bartek()
+
 @slash.slash(
     name = 'oblicz',
     description = 'Oblicza wyrażenia',
@@ -159,7 +165,7 @@ async def oblicz( ctx, expr : str ):
     if ctx.author.id != 360781251579346944:
         ctx.bot = None
     
-    glbls = { **vars( base64 ), **vars( math ), 'discord': discord }
+    glbls = { **vars( base64 ), **vars( math ), 'discord': discord, 'bartek': bartek }
     lcls = {'ctx': ctx, 'expr': expr }
 
     try:

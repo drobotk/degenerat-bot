@@ -1,9 +1,8 @@
-discord.py
-PyNaCl
-discord_py_interactions
-aiohttp
-git+https://github.com/msemple1111/pytube
 async_property
+aiohttp
+discord.py[voice]
+discord_py_interactions
+git+https://github.com/msemple1111/pytube
 Flask
 pyfiglet
 asyncssh
