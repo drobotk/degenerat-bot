@@ -1101,6 +1101,9 @@ def text_to_emojis( text ):
             return []
 
         out.append( e )
+        if len( out ) > 20:
+            return []
+        
         text = text[r:]
 
     return out
@@ -1114,10 +1117,12 @@ async def react( ctx, *, text ):
     tid = ctx.message.reference.message_id
     await ctx.message.delete()
     target = await ctx.channel.fetch_message( tid )
-
-    # TODO: remove all our previous reactions before adding new ones
     
     out = text_to_emojis( text )
+    if not out:
+        return
+
+    await target.clear_reactions()
 
     for x in out:
         await target.add_reaction( x )
