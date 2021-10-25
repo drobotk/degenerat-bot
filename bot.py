@@ -155,7 +155,7 @@ async def oblicz( ctx, expr : str ):
     
     for cep in illegal_keywords:
         if cep in code:
-            await ctx.send(f'**Nielegalny keyword:** { cep }')
+            await ctx.send(f'`{ cep }` **się skończyło, jest tylko falafel.**')
             return
 
     await ctx.defer()
@@ -176,13 +176,13 @@ async def oblicz( ctx, expr : str ):
         
     except Exception as e:
         ctx.bot = b
-        await ctx.send(f'**Zjebałeś:** { str( e ) }')
+        await ctx.send(f'**Co ty damian, pedał jesteś?** { str( e ) }')
         return
     
     ctx.bot = b
     
     if bot.http.token in wynik or bot.http.token[ ::-1 ] in wynik or 'ODMwNDIxOTE3NDc0NDg4MzUw' in wynik or 'wUzM4gDN0cDN3ETOxIDNwMDO' in wynik:
-        await ctx.send(f'**Wykryto token bota w wyniku. Spierdalaj!**')
+        await ctx.send(f'**Nie sprzedam baraniny!**')
         return
     
     wynik = f'`{ expr }` = { wynik }'
@@ -195,10 +195,10 @@ async def oblicz( ctx, expr : str ):
             await ctx.send( file = discord.File( io.BytesIO( wynik.encode() ), 'wynik.txt') )
             
         else:
-            await ctx.send('**Zjebałeś:** Rozmiar wyniku przekracza limit tego serwera.')
+            await ctx.send('**Kapusta.** (Rozmiar wyniku przekracza limit tego serwera.)')
             
     except Exception as e:
-        await ctx.send(f'**Coś poszło nie tak:** { str( e ) }')
+        await ctx.send(f'**O skubany, jak to zrobiłeś?** { str( e ) }')
 
 @slash.context_menu(
     target = ContextMenuType.MESSAGE,
