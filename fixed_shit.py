@@ -48,7 +48,7 @@ class CommandData2( model.CommandData ):
         **kwargs,
     ):
         self.name = name
-        self.description = description
+        self.description = description or ''
         self.default_permission = True if default_permission == None else default_permission
         self.id = id
         self.application_id = application_id
