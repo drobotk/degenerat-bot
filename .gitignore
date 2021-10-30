@@ -1,5 +1,7 @@
 __pycache__/
 backup/
+discord-interactions/
+pytube/
 *.webm
 *.sh
 *.json

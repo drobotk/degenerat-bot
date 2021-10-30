@@ -1,51 +1,74 @@
+import logging
+logging.basicConfig( level = logging.INFO )
+
 import discord
+
 from discord.ext.commands import Bot
 from discord.ext import tasks
+
+from discord_slash import SlashCommand
 from discord_slash.utils.manage_commands import create_option
 from discord_slash.utils.manage_components import create_button, create_actionrow
 from discord_slash.model import ButtonStyle, ContextMenuType
 
-import os
-import io
-import sys
 import math
-import aiohttp
-import unicodedata
 import base64
-import asyncssh
-import random
+import json
+
+from os import environ
+from os import remove as osremove
+from io import BytesIO
+from sys import exit
+from aiohttp import ClientSession
+from unicodedata import normalize
+from asyncssh import SSHClientConnectionOptions
+from asyncssh import connect as sshconnect
+from random import choice as randomchoice
 from pyfiglet import Figlet
 from xml.dom.minidom import parseString
 from urllib.parse import urlparse
+from cowsay import get_output_string
 
-from fixed_shit import YouTube
-from fixed_shit import SlashCommand
+#from fixed_shit import YouTube
+from pytube import YouTube
 
-import cowsay
+bot = Bot( command_prefix = ',', help_command = None, intents = discord.Intents.all() )
 
-intents = discord.Intents.default()
-intents.members = True
-
-bot = Bot( command_prefix = ',', help_command = None, intents = intents )
-
-slash = SlashCommand( bot, sync_commands = True )
+slash = SlashCommand( bot )
 
 @bot.event
 async def on_ready():
-    print(f'Logged in as { str( bot.user ) }')
+    print(f'Logged in as "{ str( bot.user ) }"')
+    
+    ####################################################
+    # set all commands' guilds_ids and then sync
+    guild_ids = [ g.id for g in bot.guilds ]
+    for name in slash.commands:
+        if name == "context":
+            for _name in slash.commands["context"]:
+                cmd = slash.commands["context"][ _name ]
+                cmd.allowed_guild_ids = guild_ids
+    
+            continue
+            
+        cmd = slash.commands[ name ]
+        cmd.allowed_guild_ids = guild_ids
+    
+    await slash.sync_all_commands()
+    ####################################################
     
     if not MusicQueuesUpdate.is_running():
         MusicQueuesUpdate.start()
         
     if not UpdateActivityStatus.is_running():
         UpdateActivityStatus.start()
-        
+
 @bot.event
 async def on_guild_join( guild ):
-    print(f'Joined { str( guild ) } - syncing commands')
+    print(f'Joined guild "{ str( guild ) }"')
     await slash.sync_all_commands()
 
-sshopts = asyncssh.SSHClientConnectionOptions( known_hosts = None, username = "degenerat-stoi", password = "japierdole", login_timeout = 10 )
+sshopts = SSHClientConnectionOptions( known_hosts = None, username = "degenerat-stoi", password = "japierdole", login_timeout = 10 )
 
 @slash.slash( name = 'stoi', description = 'Sprawdza czy kutas stoi')
 async def stoi( ctx ):
@@ -54,7 +77,7 @@ async def stoi( ctx ):
     e = discord.Embed()
 
     try:
-        async with asyncssh.connect('62.122.235.235', port = 2200, options = sshopts ) as _:
+        async with sshconnect('62.122.235.235', port = 2200, options = sshopts ) as _:
             e.color = discord.Color.green()
             e.title = '**Tak :white_check_mark:**'
     
@@ -76,8 +99,8 @@ async def stoi( ctx ):
         5:  'Heartbeat'
     }
     
-    async with aiohttp.ClientSession() as s:
-        async with s.post('https://api.uptimerobot.com/v2/getMonitors', data = f'api_key={ os.environ["uptime"] }&format=json&logs=1', headers = {'content-type':'application/x-www-form-urlencoded','cache-control':'no-cache'} ) as r:
+    async with ClientSession() as s:
+        async with s.post('https://api.uptimerobot.com/v2/getMonitors', data = f'api_key={ environ["uptime"] }&format=json&logs=1', headers = {'content-type':'application/x-www-form-urlencoded','cache-control':'no-cache'} ) as r:
             if not r.ok:
                 return
                 
@@ -120,7 +143,7 @@ async def stoi( ctx ):
 
 
 def robert_kurwa( arg ):
-    return unicodedata.normalize('NFKD', arg ).encode('utf-8', 'ignore').decode('utf-8')
+    return normalize('NFKD', arg ).encode('utf-8', 'ignore').decode('utf-8')
 
 illegal_keywords = [
     'eval',
@@ -165,7 +188,7 @@ async def oblicz( ctx, expr : str ):
     if ctx.author.id != 360781251579346944:
         ctx.bot = None
     
-    glbls = { **vars( base64 ), **vars( math ), 'discord': discord, 'bartek': bartek }
+    glbls = { **vars( base64 ), **vars( math ), **vars( json ), 'discord': discord, 'bartek': bartek }
     lcls = {'ctx': ctx, 'expr': expr }
 
     try:
@@ -192,7 +215,7 @@ async def oblicz( ctx, expr : str ):
             await ctx.send( wynik )
             
         elif len( wynik ) <= ctx.guild.filesize_limit:
-            await ctx.send( file = discord.File( io.BytesIO( wynik.encode() ), 'wynik.txt') )
+            await ctx.send( file = discord.File( BytesIO( wynik.encode() ), 'wynik.txt') )
             
         else:
             await ctx.send('**Kapusta.** (Rozmiar wyniku przekracza limit tego serwera.)')
@@ -271,10 +294,10 @@ async def spis( ctx ):
 async def ryj( ctx ):
     await ctx.defer()
     
-    async with aiohttp.ClientSession() as s:
+    async with ClientSession() as s:
         async with s.get('https://thispersondoesnotexist.com/image') as r:
             if r.ok:
-                await ctx.send( file = discord.File( io.BytesIO( await r.read() ), 'ryj.jpg') )
+                await ctx.send( file = discord.File( BytesIO( await r.read() ), 'ryj.jpg') )
                 
             else:
                 await ctx.send('**Coś poszło nie tak**')
@@ -298,7 +321,7 @@ async def img( ctx, q : str ):
     await ctx.defer()
 
     try:
-        async with aiohttp.ClientSession( headers = {'User-Agent': 'degenerat-bot/2137'} ) as s:
+        async with ClientSession( headers = {'User-Agent': 'degenerat-bot/2137'} ) as s:
             async with s.get('https://www.google.com/search', params = {'tbm': 'isch', 'q': q } ) as r:
                 if not r.ok:
                     raise Exception(f'{ r.url } got { r.status }')
@@ -315,7 +338,7 @@ async def img( ctx, q : str ):
             for k, v in enumerate( img ):
                 async with s.get( v ) as r:
                     if r.ok:
-                        files.append( discord.File( io.BytesIO( await r.read() ), f'{ make_safe_filename( q ) }{ k }.jpg') )
+                        files.append( discord.File( BytesIO( await r.read() ), f'{ make_safe_filename( q ) }{ k }.jpg') )
                     
         
         await ctx.send( files = files )
@@ -673,7 +696,7 @@ async def play( ctx, q : str ):
 
     if is_url( q ):
         if q.startswith('https://www.youtube.com/watch?v=') or q.startswith('https://youtu.be/'):
-            async with aiohttp.ClientSession() as s:
+            async with ClientSession() as s:
                 await queue_youtube( ctx, queue, q, s )
 
         else: # arbitrary url
@@ -692,7 +715,7 @@ async def play( ctx, q : str ):
 
         await ctx.send( embed = e )
         
-        async with aiohttp.ClientSession( headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0'} ) as s:
+        async with ClientSession( headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0'} ) as s:
             async with s.get('https://www.youtube.com/results', params = {'search_query': q } ) as r:
                 if not r.ok:
                     await ctx.message.edit( content = f'**Coś poszło nie tak:** { r.status }')
@@ -783,7 +806,7 @@ async def queue_youtube( ctx, queue, url, session = None ):
             path = await s.download( filename = str( ctx.message.id ), skip_existing = False )
             
         except:
-            print('failed to download stream')
+            print('Failed to download stream')
             errors += 1
             
         else:
@@ -794,7 +817,7 @@ async def queue_youtube( ctx, queue, url, session = None ):
         await ctx.message.edit( embed = e )
         return
         
-    after = lambda e: os.remove( path )
+    after = lambda e: osremove( path )
     
     audio = await discord.FFmpegOpusAudio.from_probe( path )
  
@@ -839,17 +862,17 @@ async def on_voice_state_update( member, before, after ):
     
     if after.channel != before.channel:
         if before.channel == None: # joined voice channel
-            print(f'joined { after.channel }')
+            print(f'Joined vc "{ after.channel }"')
             
         elif after.channel == None: # left voice channel
-            print(f'left { before.channel }')
+            print(f'Left vc "{ before.channel }"')
             
             queue = musicQueues.get( before.channel.guild.id )
             if queue is not None:
                 queue.clear()
             
         else: # moved to other channel
-            print(f'moved to { after.channel }')
+            print(f'Moved to vc "{ after.channel }"')
 
 @slash.slash( name = 'disconnect', description = 'Rozłącza bota od kanału głosowego')
 async def disconnect( ctx ):
@@ -969,7 +992,7 @@ async def ping( ctx ):
 async def cow( ctx ):
     await ctx.defer()
     
-    async with aiohttp.ClientSession() as s:
+    async with ClientSession() as s:
         async with s.get('https://evilinsult.com/generate_insult.php?lang=en&type=json') as r:
             if not r.ok:
                 await ctx.send(f"**Error:** insult status code { r.status }")
@@ -1097,7 +1120,6 @@ def text_to_emojis( text ):
                 break
 
         if not e:
-            print("no more choices: " + text )
             return []
 
         out.append( e )
@@ -1154,7 +1176,7 @@ async def UpdateActivityStatus():
         return
     
     while True:
-        activity = random.choice( activities )
+        activity = randomchoice( activities )
         
         if activity != me.activity:
             break
@@ -1163,7 +1185,7 @@ async def UpdateActivityStatus():
 
 
 try:
-    bot.run( base64.b64decode( os.environ["cep"].encode() ).decode() )
+    bot.run( base64.b64decode( environ["cep"].encode() ).decode() )
     
 except:
     raise
@@ -1174,4 +1196,4 @@ finally:
     for q in musicQueues.values():
         q.clear()
         
-    sys.exit()
+    exit()
