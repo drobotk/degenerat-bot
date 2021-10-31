@@ -2,6 +2,7 @@ __pycache__/
 backup/
 discord-interactions/
 pytube/
+modules/_.py
 *.webm
 *.sh
 *.json
