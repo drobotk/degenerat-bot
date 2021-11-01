@@ -90,8 +90,7 @@ class Music( Cog ):
             q.clear()
             
     async def get_voice_client_for_channel( self, ch: VoiceChannel, stop_playing: bool = False ) -> VoiceClient:
-        vc = [ a for a in self.bot.voice_clients if a.channel.guild == ch.guild ]
-        vc = vc[ 0 ] if len( vc ) else None
+        vc = ch.guild.voice_client
         
         if vc:
             if vc.channel != ch:
@@ -135,7 +134,7 @@ class Music( Cog ):
         ]
     )
     async def _play( self, ctx: Union[ SlashContext, MenuContext ], q: str ):
-        ch = ctx.author.voice.channel if ctx.author.voice != None else None
+        ch = ctx.author.voice.channel if ctx.author.voice is not None else None
 
         if ch == None:
             await ctx.send('**Musisz być połączony z kanałem głosowym**', hidden = True )
@@ -198,7 +197,7 @@ class Music( Cog ):
     async def _play_context( self, ctx: MenuContext ):
         if ctx.target_message.content:
             url = self.extract_yt_url( ctx.target_message.content )
-            await self._play.func( ctx, url or ctx.target_message.content )
+            await self._play.func( self, ctx, url or ctx.target_message.content )
 
         elif ctx.target_message.embeds:
             e = ctx.target_message.embeds[0]
@@ -206,10 +205,10 @@ class Music( Cog ):
             
             url = self.extract_yt_url( text )
             if url:
-                await self._play.func( ctx, url )
+                await self._play.func( self, ctx, url )
 
             elif e.description or e.title:
-                await self._play.func( ctx, e.description or e.title )
+                await self._play.func( self, ctx, e.description or e.title )
 
         else:
             await ctx.send('**Błąd: Nie wykryto pasującej treści**', hidden = True )
@@ -337,56 +336,56 @@ class Music( Cog ):
         description = 'Rozłącza bota od kanału głosowego'
     )
     async def _disconnect( self, ctx: SlashContext ):
-        for vc in self.bot.voice_clients:
-            if vc.channel.guild == ctx.guild:
-                await vc.disconnect()
-                await ctx.send(':wave:')
-                return
-
-        await ctx.send('**Nie połączono**', hidden = True )
+        vc = ctx.guild.voice_client
+        if not vc:
+            await ctx.send('**Nie połączono**', hidden = True )
+            return
+            
+        await vc.disconnect()
+        await ctx.send(':wave:')
 
     @cog_ext.cog_slash(
         name = 'pause',
         description = 'Pauzuje odtwarzanie muzyki'
     )
     async def _pause( self, ctx: SlashContext ):
-        for vc in self.bot.voice_clients:
-            if vc.channel.guild == ctx.guild:
-                vc.pause()
-                await ctx.send(':ok_hand:')
-                return
-
-        await ctx.send('**Nie połączono**', hidden = True )
+        vc = ctx.guild.voice_client
+        if not vc:
+            await ctx.send('**Nie połączono**', hidden = True )
+            return
+            
+        vc.pause()
+        await ctx.send(':ok_hand:')
         
     @cog_ext.cog_slash(
         name = 'resume',
         description = 'Wznawia odtwarzanie muzyki'
     )
     async def _resume( self, ctx: SlashContext ):
-        for vc in self.bot.voice_clients:
-            if vc.channel.guild == ctx.guild:
-                vc.resume()
-                await ctx.send(':ok_hand:')
-                return
-
-        await ctx.send('**Nie połączono**', hidden = True )
+        vc = ctx.guild.voice_client
+        if not vc:
+            await ctx.send('**Nie połączono**', hidden = True )
+            return
+            
+        vc.resume()
+        await ctx.send(':ok_hand:')
         
     @cog_ext.cog_slash(
         name = 'stop',
         description = 'Zakańcza odtwarzanie muzyki i czyści kolejkę'
     )
     async def _stop( self, ctx: SlashContext ):
-        for vc in self.bot.voice_clients:
-            if vc.channel.guild == ctx.guild:
-                queue = self.queues.get( ctx.guild.id )
-                if queue is not None:
-                    queue.clear()
-            
-                vc.stop()
-                await ctx.send(':ok_hand:')
-                return
-
-        await ctx.send('**Nie połączono**', hidden = True )
+        vc = ctx.guild.voice_client
+        if not vc:
+            await ctx.send('**Nie połączono**', hidden = True )
+            return
+        
+        queue = self.queues.get( ctx.guild.id )
+        if queue is not None:
+            queue.clear()
+        
+        vc.stop()
+        await ctx.send(':ok_hand:')
 
     @cog_ext.cog_slash(
         name = 'clear',
@@ -404,13 +403,13 @@ class Music( Cog ):
         description = 'Pomija aktualnie odtwarzany element kolejki'
     )
     async def _skip( self, ctx: SlashContext ):
-        for vc in self.bot.voice_clients:
-            if vc.channel.guild == ctx.guild:
-                vc.stop()
-                await ctx.send(':ok_hand:')
-                return
-
-        await ctx.send('**Nie połączono**', hidden = True )
+        vc = ctx.guild.voice_client
+        if not vc:
+            await ctx.send('**Nie połączono**', hidden = True )
+            return
+            
+        vc.stop()
+        await ctx.send(':ok_hand:')
         
     @cog_ext.cog_slash(
         name = 'queue',

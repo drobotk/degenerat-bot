@@ -34,6 +34,7 @@ async def on_ready():
 @bot.event
 async def on_guild_join( guild ):
     print(f'Joined guild "{ str( guild ) }"')
+    
     await slash.sync_all_commands()
 
 def main():
@@ -53,10 +54,7 @@ def main():
         
         bot.run( b64decode( environ["cep"] ).decode() )
         
-    except Exception as e:
-        print( e )
-        
-    finally:
+    except KeyboardInterrupt:
         exit()
         
 if __name__ == "__main__":
