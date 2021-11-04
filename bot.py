@@ -1,5 +1,6 @@
 import logging
 logging.basicConfig( level = logging.INFO )
+_log = logging.getLogger( __name__ )
 
 from discord import Intents
 from discord.ext.commands import Bot
@@ -14,7 +15,7 @@ slash = SlashCommand( bot )
 
 @bot.event
 async def on_ready():
-    print(f'Logged in as "{ str( bot.user ) }"')
+    _log.info(f'Logged in as "{ str( bot.user ) }"')
     
     # set all commands' guilds_ids and then sync
     guild_ids = [ g.id for g in bot.guilds ]
@@ -33,7 +34,7 @@ async def on_ready():
 
 @bot.event
 async def on_guild_join( guild ):
-    print(f'Joined guild "{ str( guild ) }"')
+    _log.info(f'Joined guild "{ str( guild ) }"')
     
     await slash.sync_all_commands()
 
@@ -43,7 +44,7 @@ def main():
         bot.load_extension("modules.activities")
         bot.load_extension("modules.figlet")
         bot.load_extension("modules.oblicz")
-        bot.load_extension("modules.ping")
+        #bot.load_extension("modules.ping") # replaced by status
         bot.load_extension("modules.cow")
         bot.load_extension("modules.react")
         bot.load_extension("modules.spis")
@@ -51,6 +52,8 @@ def main():
         bot.load_extension("modules.ryj")
         bot.load_extension("modules.ttt")
         bot.load_extension("modules.music")
+        bot.load_extension("modules.status")
+        bot.load_extension("modules.invite")
         
         bot.run( b64decode( environ["cep"] ).decode() )
         

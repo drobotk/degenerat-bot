@@ -19,7 +19,8 @@ class TTT( Cog ):
             buttons = []
             
             for j in range( 3 ):
-                buttons.append( create_button( style = ButtonStyle.blue, emoji = '▪️', custom_id = f'ttt{ i * 3 + j }') )
+                #buttons.append( create_button( style = ButtonStyle.blue, emoji = '▪️', custom_id = f'ttt{ i * 3 + j }') )
+                buttons.append( create_button( style = ButtonStyle.blue, label = '▪️', custom_id = f'ttt{ i * 3 + j }') )
             
             components.append( create_actionrow( *buttons ) )
 
@@ -43,11 +44,13 @@ class TTT( Cog ):
         content = ctx.origin_message.content
         
         if content == 'Ruch: krzyżyk':
-            button['emoji'] = emoji_to_dict('❌')
+            #button['emoji'] = emoji_to_dict('❌')
+            button['label'] = '❌'
             content = 'Ruch: kółko'
             
         elif content == 'Ruch: kółko':
-            button['emoji'] = emoji_to_dict('⭕')
+            #button['emoji'] = emoji_to_dict('⭕')
+            button['label'] = '⭕'
             content = 'Ruch: krzyżyk'
         
         result = self.ttt_check_win( components )
@@ -78,116 +81,116 @@ class TTT( Cog ):
 
     def ttt_check_win( self, components ):
         if (
-            components[ 0 ]['components'][ 0 ]['emoji']['name'] == '❌'
-            and components[ 0 ]['components'][ 1 ]['emoji']['name'] == '❌'
-            and components[ 0 ]['components'][ 2 ]['emoji']['name'] == '❌'
+            components[ 0 ]['components'][ 0 ]['label'] == '❌'
+            and components[ 0 ]['components'][ 1 ]['label'] == '❌'
+            and components[ 0 ]['components'][ 2 ]['label'] == '❌'
         ):
             return {'win': 1, 'buttons': ( (0,0) , (0,1) , (0,2) ) }
             
         if (
-            components[ 1 ]['components'][ 0 ]['emoji']['name'] == '❌'
-            and components[ 1 ]['components'][ 1 ]['emoji']['name'] == '❌'
-            and components[ 1 ]['components'][ 2 ]['emoji']['name'] == '❌'
+            components[ 1 ]['components'][ 0 ]['label'] == '❌'
+            and components[ 1 ]['components'][ 1 ]['label'] == '❌'
+            and components[ 1 ]['components'][ 2 ]['label'] == '❌'
         ):
             return {'win': 1, 'buttons': ( (1,0) , (1,1) , (1,2) ) }
         
         if (
-            components[ 2 ]['components'][ 0 ]['emoji']['name'] == '❌'
-            and components[ 2 ]['components'][ 1 ]['emoji']['name'] == '❌'
-            and components[ 2 ]['components'][ 2 ]['emoji']['name'] == '❌'
+            components[ 2 ]['components'][ 0 ]['label'] == '❌'
+            and components[ 2 ]['components'][ 1 ]['label'] == '❌'
+            and components[ 2 ]['components'][ 2 ]['label'] == '❌'
         ):
             return {'win': 1, 'buttons': ( (2,0) , (2,1) , (2,2) ) }
             
         if (
-            components[ 0 ]['components'][ 0 ]['emoji']['name'] == '❌'
-            and components[ 1 ]['components'][ 0 ]['emoji']['name'] == '❌'
-            and components[ 2 ]['components'][ 0 ]['emoji']['name'] == '❌'
+            components[ 0 ]['components'][ 0 ]['label'] == '❌'
+            and components[ 1 ]['components'][ 0 ]['label'] == '❌'
+            and components[ 2 ]['components'][ 0 ]['label'] == '❌'
         ):
             return {'win': 1, 'buttons': ( (0,0) , (1,0) , (2,0) ) }
             
         if (
-            components[ 0 ]['components'][ 1 ]['emoji']['name'] == '❌'
-            and components[ 1 ]['components'][ 1 ]['emoji']['name'] == '❌'
-            and components[ 2 ]['components'][ 1 ]['emoji']['name'] == '❌'
+            components[ 0 ]['components'][ 1 ]['label'] == '❌'
+            and components[ 1 ]['components'][ 1 ]['label'] == '❌'
+            and components[ 2 ]['components'][ 1 ]['label'] == '❌'
         ):
             return {'win': 1, 'buttons': ( (0,1) , (1,1) , (2,1) ) }
             
         if (
-            components[ 0 ]['components'][ 2 ]['emoji']['name'] == '❌'
-            and components[ 1 ]['components'][ 2 ]['emoji']['name'] == '❌'
-            and components[ 2 ]['components'][ 2 ]['emoji']['name'] == '❌'
+            components[ 0 ]['components'][ 2 ]['label'] == '❌'
+            and components[ 1 ]['components'][ 2 ]['label'] == '❌'
+            and components[ 2 ]['components'][ 2 ]['label'] == '❌'
         ):
             return {'win': 1, 'buttons': ( (0,2) , (1,2) , (2,2) ) }
             
         if (
-            components[ 0 ]['components'][ 0 ]['emoji']['name'] == '❌'
-            and components[ 1 ]['components'][ 1 ]['emoji']['name'] == '❌'
-            and components[ 2 ]['components'][ 2 ]['emoji']['name'] == '❌'
+            components[ 0 ]['components'][ 0 ]['label'] == '❌'
+            and components[ 1 ]['components'][ 1 ]['label'] == '❌'
+            and components[ 2 ]['components'][ 2 ]['label'] == '❌'
         ):
             return {'win': 1, 'buttons': ( (0,0) , (1,1) , (2,2) ) }
             
         if (
-            components[ 0 ]['components'][ 2 ]['emoji']['name'] == '❌'
-            and components[ 1 ]['components'][ 1 ]['emoji']['name'] == '❌'
-            and components[ 2 ]['components'][ 0 ]['emoji']['name'] == '❌'
+            components[ 0 ]['components'][ 2 ]['label'] == '❌'
+            and components[ 1 ]['components'][ 1 ]['label'] == '❌'
+            and components[ 2 ]['components'][ 0 ]['label'] == '❌'
         ):
             return {'win': 1, 'buttons': ( (0,2) , (1,1) , (2,0) ) }
             
             
             
         if (
-            components[ 0 ]['components'][ 0 ]['emoji']['name'] == '⭕'
-            and components[ 0 ]['components'][ 1 ]['emoji']['name'] == '⭕'
-            and components[ 0 ]['components'][ 2 ]['emoji']['name'] == '⭕'
+            components[ 0 ]['components'][ 0 ]['label'] == '⭕'
+            and components[ 0 ]['components'][ 1 ]['label'] == '⭕'
+            and components[ 0 ]['components'][ 2 ]['label'] == '⭕'
         ):
             return {'win': 2, 'buttons': ( (0,0) , (0,1) , (0,2) ) }
             
         if (
-            components[ 1 ]['components'][ 0 ]['emoji']['name'] == '⭕'
-            and components[ 1 ]['components'][ 1 ]['emoji']['name'] == '⭕'
-            and components[ 1 ]['components'][ 2 ]['emoji']['name'] == '⭕'
+            components[ 1 ]['components'][ 0 ]['label'] == '⭕'
+            and components[ 1 ]['components'][ 1 ]['label'] == '⭕'
+            and components[ 1 ]['components'][ 2 ]['label'] == '⭕'
         ):
             return {'win': 2, 'buttons': ( (1,0) , (1,1) , (1,2) ) }
         
         if (
-            components[ 2 ]['components'][ 0 ]['emoji']['name'] == '⭕'
-            and components[ 2 ]['components'][ 1 ]['emoji']['name'] == '⭕'
-            and components[ 2 ]['components'][ 2 ]['emoji']['name'] == '⭕'
+            components[ 2 ]['components'][ 0 ]['label'] == '⭕'
+            and components[ 2 ]['components'][ 1 ]['label'] == '⭕'
+            and components[ 2 ]['components'][ 2 ]['label'] == '⭕'
         ):
             return {'win': 2, 'buttons': ( (2,0) , (2,1) , (2,2) ) }
             
         if (
-            components[ 0 ]['components'][ 0 ]['emoji']['name'] == '⭕'
-            and components[ 1 ]['components'][ 0 ]['emoji']['name'] == '⭕'
-            and components[ 2 ]['components'][ 0 ]['emoji']['name'] == '⭕'
+            components[ 0 ]['components'][ 0 ]['label'] == '⭕'
+            and components[ 1 ]['components'][ 0 ]['label'] == '⭕'
+            and components[ 2 ]['components'][ 0 ]['label'] == '⭕'
         ):
             return {'win': 2, 'buttons': ( (0,0) , (1,0) , (2,0) ) }
             
         if (
-            components[ 0 ]['components'][ 1 ]['emoji']['name'] == '⭕'
-            and components[ 1 ]['components'][ 1 ]['emoji']['name'] == '⭕'
-            and components[ 2 ]['components'][ 1 ]['emoji']['name'] == '⭕'
+            components[ 0 ]['components'][ 1 ]['label'] == '⭕'
+            and components[ 1 ]['components'][ 1 ]['label'] == '⭕'
+            and components[ 2 ]['components'][ 1 ]['label'] == '⭕'
         ):
             return {'win': 2, 'buttons': ( (0,1) , (1,1) , (2,1) ) }
             
         if (
-            components[ 0 ]['components'][ 2 ]['emoji']['name'] == '⭕'
-            and components[ 1 ]['components'][ 2 ]['emoji']['name'] == '⭕'
-            and components[ 2 ]['components'][ 2 ]['emoji']['name'] == '⭕'
+            components[ 0 ]['components'][ 2 ]['label'] == '⭕'
+            and components[ 1 ]['components'][ 2 ]['label'] == '⭕'
+            and components[ 2 ]['components'][ 2 ]['label'] == '⭕'
         ):
             return {'win': 2, 'buttons': ( (0,2) , (1,2) , (2,2) ) }
             
         if (
-            components[ 0 ]['components'][ 0 ]['emoji']['name'] == '⭕'
-            and components[ 1 ]['components'][ 1 ]['emoji']['name'] == '⭕'
-            and components[ 2 ]['components'][ 2 ]['emoji']['name'] == '⭕'
+            components[ 0 ]['components'][ 0 ]['label'] == '⭕'
+            and components[ 1 ]['components'][ 1 ]['label'] == '⭕'
+            and components[ 2 ]['components'][ 2 ]['label'] == '⭕'
         ):
             return {'win': 2, 'buttons': ( (0,0) , (1,1) , (2,2) ) }
             
         if (
-            components[ 0 ]['components'][ 2 ]['emoji']['name'] == '⭕'
-            and components[ 1 ]['components'][ 1 ]['emoji']['name'] == '⭕'
-            and components[ 2 ]['components'][ 0 ]['emoji']['name'] == '⭕'
+            components[ 0 ]['components'][ 2 ]['label'] == '⭕'
+            and components[ 1 ]['components'][ 1 ]['label'] == '⭕'
+            and components[ 2 ]['components'][ 0 ]['label'] == '⭕'
         ):
             return {'win': 2, 'buttons': ( (0,2) , (1,1) , (2,0) ) }
         

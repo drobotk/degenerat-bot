@@ -5,7 +5,6 @@ from discord_slash.model import ContextMenuType
 from discord_slash.context import SlashContext, MenuContext
 from discord_slash.utils.manage_commands import create_option
 from typing import Union
-from aiohttp import ClientSession
 from xml.dom.minidom import parseString
 from io import BytesIO
 
@@ -32,24 +31,23 @@ class Img( Cog ):
         await ctx.defer()
 
         try:
-            async with ClientSession( headers = {'User-Agent': 'degenerat-bot/2137'} ) as s:
-                async with s.get('https://www.google.com/search', params = {'tbm': 'isch', 'q': q } ) as r:
-                    if not r.ok:
-                        raise Exception(f'{ r.url } got { r.status }')
-                    
-                    text = await r.text()
+            async with self.bot.http._HTTPClient__session.get('https://www.google.com/search', params = {'tbm': 'isch', 'q': q }, headers = {'User-Agent': 'degenerat-bot/2137'} ) as r:
+                if not r.ok:
+                    raise Exception(f'{ r.url } got { r.status }')
                 
-                doc = parseString( text )
+                text = await r.text()
+            
+            doc = parseString( text )
 
-                img = [ x.getAttribute('src') for x in doc.getElementsByTagName('img') ]
-                img = img[ 1:4 ]
-                
-                files = []
-                
-                for k, v in enumerate( img ):
-                    async with s.get( v ) as r:
-                        if r.ok:
-                            files.append( File( BytesIO( await r.read() ), f'{ self.make_safe_filename( q ) }{ k }.jpg') )
+            img = [ x.getAttribute('src') for x in doc.getElementsByTagName('img') ]
+            img = img[ 1:4 ]
+            
+            files = []
+            
+            for k, v in enumerate( img ):
+                async with self.bot.http._HTTPClient__session.get( v ) as r:
+                    if r.ok:
+                        files.append( File( BytesIO( await r.read() ), f'{ self.make_safe_filename( q ) }{ k }.jpg') )
                         
             
             await ctx.send( files = files )

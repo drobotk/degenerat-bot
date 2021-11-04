@@ -21,7 +21,7 @@ class Spis( Cog ):
             names.append( m.name )
             discs.append('#' + m.discriminator )
             
-        e = Embed( title = 'Spis Ludności', color = Color.blurple() )
+        e = Embed( title = 'Spis Ludności', color = ctx.me.color )
         
         e.add_field( name = 'Name', value = '\n'.join( names ), inline = True )
         e.add_field( name = 'Discriminator', value = '\n'.join( discs ), inline = True )

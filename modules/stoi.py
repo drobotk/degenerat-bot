@@ -4,20 +4,40 @@ from discord_slash import cog_ext
 from discord_slash.context import SlashContext
 from asyncssh import SSHClientConnectionOptions
 from asyncssh import connect as sshconnect
-from aiohttp import ClientSession
 from os import environ
-from math import floor
+from logging import getLogger
 
 class Stoi( Cog ):
     def __init__( self, bot: Bot ):
         self.bot = bot
-        
+        self.log = getLogger( __name__ )
         self.sshopts = SSHClientConnectionOptions(
             username = "degenerat-stoi",
             password = "japierdole",
             known_hosts = None,
             login_timeout = 5
         )
+
+    def get_duration_str( self, seconds: int ) -> str:
+        days, r = divmod( seconds, 86400 )
+        hours, r = divmod( r, 3600 )
+        mins, secs = divmod( r, 60 )
+        
+        dur = ''
+        
+        if days:
+            dur += f'{ days }d '
+        
+        if hours or days:
+            dur += f'{ hours }h '
+            
+        if mins or hours or days:
+            dur += f'{ mins }m '
+        
+        if secs or mins or hours or days:
+            dur += f'{ secs }s'
+
+        return dur
 
     @cog_ext.cog_slash(
         name = 'stoi',
@@ -51,15 +71,15 @@ class Stoi( Cog ):
             5:  'Heartbeat'
         }
         
-        async with ClientSession() as s:
-            async with s.post('https://api.uptimerobot.com/v2/getMonitors', data = f'api_key={ environ["uptime"] }&format=json&logs=1', headers = {'content-type':'application/x-www-form-urlencoded','cache-control':'no-cache'} ) as r:
-                if not r.ok:
-                    return
-                    
-                j = await r.json()
-                if j['stat'] != 'ok':
-                    print( j )
-                    return
+        async with self.bot.http._HTTPClient__session.post('https://api.uptimerobot.com/v2/getMonitors', data = f'api_key={ environ["uptime"] }&format=json&logs=1', headers = {'content-type':'application/x-www-form-urlencoded','cache-control':'no-cache'} ) as r:
+            if not r.ok:
+                return
+                
+            j = await r.json()
+            
+        if j['stat'] != 'ok':
+            self.log.error( j )
+            return
 
         for m in j['monitors']:
             typ = typesToString.get( m["type"], str( m["type"] ) )
@@ -67,25 +87,7 @@ class Stoi( Cog ):
             
             dur = m['logs'][0]['duration']
             
-            days = floor( dur / 86400 )
-            dur = dur % 86400
-            hours = floor( dur / 3600 )
-            dur = dur % 3600
-            mins = floor( dur / 60 )
-            secs = dur % 60
-            
-            dur = ''
-            if days:
-                dur += f'{ days }d '
-            
-            if hours or days:
-                dur += f'{ hours }h '
-                
-            if mins or hours or days:
-                dur += f'{ mins }m '
-            
-            if secs or mins or hours or days:
-                dur += f'{ secs }s'
+            dur = self.get_duration_str( dur )
             
             e.add_field( name = typ, value = f'**{ status }** - { dur }', inline = False )
         

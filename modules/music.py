@@ -7,10 +7,10 @@ from discord_slash.model import ContextMenuType
 from discord_slash.context import SlashContext, MenuContext
 from discord_slash.utils.manage_commands import create_option
 from typing import Union, Callable, Any
-from aiohttp import ClientSession
 from urllib.parse import urlparse
 from pytube import YouTube
 from os import remove as osremove
+from logging import getLogger
 
 class MusicQueueEntry:
     def __init__( self, title: str, audio_source: AudioSource, message: Message, after: Callable[[Exception], Any] = None ):
@@ -75,7 +75,7 @@ class MusicQueue:
 class Music( Cog ):
     def __init__( self, bot: Bot ):
         self.bot = bot
-        
+        self.log = getLogger( __name__ )
         self.queues: dict[int, MusicQueue] = {}
 
     @Cog.listener()
@@ -155,12 +155,11 @@ class Music( Cog ):
 
         if self.is_url( q ):
             if q.startswith('https://www.youtube.com/watch?v=') or q.startswith('https://youtu.be/'):
-                async with ClientSession() as s:
-                    await self.queue_youtube( ctx, queue, q, s )
+                await self.queue_youtube( ctx, queue, q )
 
             else: # arbitrary url
                 audio = FFmpegPCMAudio( q )
-                e = Embed( description = q, color = Color.blurple() )
+                e = Embed( description = q, color = ctx.me.color )
                 e.title = 'Odtwarzanie' if queue.empty else 'Dodano do kolejki'
                 
                 msg = await ctx.send( embed = e )
@@ -169,26 +168,26 @@ class Music( Cog ):
                 queue.add_entry( entry )
 
         else: # Search query
-            e = Embed( description = f'Wyszukiwanie `{ q }`...', color = Color.blurple() )
+            e = Embed( description = f'Wyszukiwanie `{ q }`...', color = ctx.me.color )
 
             await ctx.send( embed = e )
             
-            async with ClientSession( headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0'} ) as s:
-                async with s.get('https://www.youtube.com/results', params = {'search_query': q } ) as r:
-                    if not r.ok:
-                        await ctx.message.edit( content = f'**Coś poszło nie tak:** { r.status }')
-                        return
-                        
-                    text = await r.text()
-                
-                url = self.extract_yt_url( text )
-                if not url:
-                    e = Embed( description = f'Brak wyników wyszukiwania dla: `{ q }`', color = Color.red() )
-                    
-                    await ctx.message.edit( embed = e )
+            #async with ClientSession( headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0'} ) as s:
+            async with self.bot.http._HTTPClient__session.get('https://www.youtube.com/results', params = {'search_query': q } ) as r:
+                if not r.ok:
+                    await ctx.message.edit( content = f'**Coś poszło nie tak:** { r.status }')
                     return
+                    
+                text = await r.text()
+            
+            url = self.extract_yt_url( text )
+            if not url:
+                e = Embed( description = f'Brak wyników wyszukiwania dla: `{ q }`', color = Color.red() )
+                
+                await ctx.message.edit( embed = e )
+                return
 
-                await self.queue_youtube( ctx, queue, url, s )
+            await self.queue_youtube( ctx, queue, url )
                 
     @cog_ext.cog_context_menu(
         name = 'Dodaj do kolejki',
@@ -213,11 +212,11 @@ class Music( Cog ):
         else:
             await ctx.send('**Błąd: Nie wykryto pasującej treści**', hidden = True )
 
-    async def queue_youtube( self, ctx: Union[ SlashContext, MenuContext ], queue: MusicQueue, url: str, session: ClientSession = None ):
+    async def queue_youtube( self, ctx: Union[ SlashContext, MenuContext ], queue: MusicQueue, url: str ):
         reply = ctx.message.edit if ctx.message else ctx.send
 
         try:
-            yt = YouTube( url, session = session )
+            yt = YouTube( url, session = self.bot.http._HTTPClient__session )
             title = await yt.title
             
         except Exception as e:
@@ -250,7 +249,7 @@ class Music( Cog ):
             await reply( embed = e )
             return
 
-        e = Embed( description = 'Pobierańsko...', color = Color.blurple() )
+        e = Embed( title = 'Pobierańsko...', description = title, color = ctx.me.color )
         e.set_thumbnail( url = f'https://i.ytimg.com/vi/{ yt.video_id }/mqdefault.jpg')
         e.set_footer( text = url )
         
@@ -263,7 +262,7 @@ class Music( Cog ):
                 path = await s.download( filename = str( ctx.message.id ), skip_existing = False )
                 
             except:
-                print('Failed to download stream')
+                self.log.error('Failed to download stream')
                 errors += 1
                 
             else:
@@ -274,11 +273,10 @@ class Music( Cog ):
             await ctx.message.edit( embed = e )
             return
             
-        after = lambda e: osremove( path )
+        after = lambda err: osremove( path )
         
         audio = await FFmpegOpusAudio.from_probe( path )
-     
-        e.description = title
+
         e.title = 'Odtwarzanie' if queue.empty else 'Dodano do kolejki'
         
         await ctx.message.edit( embed = e )
@@ -314,22 +312,26 @@ class Music( Cog ):
 
     @Cog.listener()
     async def on_voice_state_update( self, member: Member, before: VoiceState, after: VoiceState ):
-        if member.id != self.bot.user.id:
+        if member != self.bot.user:
             return
-        
+
         if after.channel != before.channel:
             if before.channel == None: # joined voice channel
-                print(f'Joined vc "{ after.channel }"')
+                self.log.info(f'Joined vc "{ after.channel }"')
                 
             elif after.channel == None: # left voice channel
-                print(f'Left vc "{ before.channel }"')
+                self.log.info(f'Left vc "{ before.channel }"')
                 
                 queue = self.queues.get( before.channel.guild.id )
                 if queue is not None:
                     queue.clear()
                 
             else: # moved to other channel
-                print(f'Moved to vc "{ after.channel }"')
+                self.log.info(f'Moved to vc "{ after.channel }"')
+                
+        if not after.deaf:
+            self.log.info('Undeafend!')
+            await member.edit( deafen = True )
 
     @cog_ext.cog_slash(
         name = 'disconnect',
@@ -425,7 +427,7 @@ class Music( Cog ):
             await ctx.send('**W kolejce pusto jak w głowie Jacka**', hidden = True )
             return
 
-        e = Embed( title = 'Kolejka', color = Color.blurple() )
+        e = Embed( title = 'Kolejka', color = ctx.me.color )
         
         e.add_field( inline = True, name = '#', value = '\n'.join( [ str( n + 1 ) for n in range( queue.num_entries ) ] ) )
         e.add_field( inline = True, name = 'Tytuł', value = '\n'.join( queue.entries ) )
