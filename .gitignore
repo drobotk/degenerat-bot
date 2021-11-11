@@ -1,9 +1,10 @@
+*.webm
+*.sh
+*.pyc
+*.json
 __pycache__/
 backup/
 discord-interactions/
 pytube/
 modules/__pycache__/
 modules/_.py
-*.webm
-*.sh
-*.json

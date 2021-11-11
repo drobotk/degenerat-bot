@@ -13,10 +13,7 @@ from sys import exit
 bot = Bot( command_prefix = ',', help_command = None, intents = Intents.all() )
 slash = SlashCommand( bot )
 
-@bot.event
-async def on_ready():
-    _log.info(f'Logged in as "{ str( bot.user ) }"')
-    
+async def sync():
     # set all commands' guilds_ids and then sync
     guild_ids = [ g.id for g in bot.guilds ]
     for name in slash.commands:
@@ -33,10 +30,16 @@ async def on_ready():
     await slash.sync_all_commands()
 
 @bot.event
+async def on_ready():
+    _log.info(f'Logged in as "{ str( bot.user ) }"')
+    
+    await sync()
+
+@bot.event
 async def on_guild_join( guild ):
     _log.info(f'Joined guild "{ str( guild ) }"')
     
-    await slash.sync_all_commands()
+    await sync()
 
 def main():
     try:
