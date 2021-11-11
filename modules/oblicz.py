@@ -10,6 +10,7 @@ import discord
 import math
 import base64
 import json
+from datetime import datetime
 
 class Bartek:
     def __init__( self ):
@@ -44,6 +45,19 @@ class Oblicz( Cog ):
         ]
     )
     async def _oblicz( self, ctx: Union[ SlashContext, MenuContext ], expr: str ):
+        e = discord.Embed( title = "Użył /oblicz", description = f"/oblicz `expr:{ expr }`", timestamp = datetime.utcnow(), color = ctx.me.color )
+
+        icon = str( ctx.author.avatar_url )
+        icon = icon[ :icon.find('?') ] + '?size=32'
+        e.set_author( name = ctx.author.name, icon_url = icon )
+        
+        icon = str( ctx.guild.icon_url )
+        icon = icon[ :icon.find('?') ] + '?size=32' # ?size=*   => ?size=32
+        e.set_footer( text = ctx.guild.name, icon_url = icon )
+        
+        await self.bot.get_channel(908412374673944657).send( embed = e )
+        ######################################################
+    
         code = normalize('NFKD', expr ).encode('utf-8', 'ignore').decode('utf-8')
         
         for cep in self.illegal_keywords:
