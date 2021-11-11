@@ -289,6 +289,13 @@ class Music( Cog ):
         for guild in self.bot.guilds:
             queue = self.queues.get( guild.id )
             if queue is None or queue.cleared or queue.num_entries <= 0:
+                if guild.voice_client and not guild.voice_client.is_playing() and len( guild.voice_client.channel.members ) == 1:
+                    if queue and queue.message_channel:
+                        e = Embed( description = f'Poszedłem sobie z { guild.voice_client.channel.mention } bo zostałem sam', color = guild.me.color )
+                        await queue.message_channel.send( embed = e )
+                    
+                    await guild.voice_client.disconnect()
+                    
                 continue
                 
             queue.vc = await self.get_voice_client_for_channel( queue.voice_channel )
