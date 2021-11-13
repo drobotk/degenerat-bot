@@ -47,7 +47,6 @@ def main():
         bot.load_extension("modules.activities")
         bot.load_extension("modules.figlet")
         bot.load_extension("modules.oblicz")
-        #bot.load_extension("modules.ping") # replaced by status
         bot.load_extension("modules.cow")
         bot.load_extension("modules.react")
         bot.load_extension("modules.spis")
@@ -56,7 +55,9 @@ def main():
         bot.load_extension("modules.ttt")
         bot.load_extension("modules.music")
         bot.load_extension("modules.status")
-        bot.load_extension("modules.invite")
+        #bot.load_extension("modules.invite") replaced by info
+        bot.load_extension("modules.triggers")
+        bot.load_extension("modules.info")
         
         bot.run( b64decode( environ["cep"] ).decode() )
         

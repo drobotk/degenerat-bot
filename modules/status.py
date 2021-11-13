@@ -10,7 +10,7 @@ class Status( Cog ):
 
     @Cog.listener()
     async def on_ready( self ):
-        self.start_time = round(time())
+        self.start_time = round( time() )
 
     @cog_ext.cog_slash(
         name = 'status',
@@ -23,12 +23,12 @@ class Status( Cog ):
         res_time = end - start
         
         e = Embed( title = "Status Bota", color = ctx.me.color )
-        e.add_field( name = "Uruchomiony", value = f"<t:{self.start_time}:R>", inline = False )
+        e.add_field( name = "Uruchomiony", value = f"<t:{ self.start_time }:R>", inline = False )
         
-        e.add_field( name = "Opóźnienie Websocketa", value = f"{round( self.bot.latency * 1000 )} ms", inline = True )
-        e.add_field( name = "Czas odpowiedzi", value = f"{round( res_time * 1000 )} ms", inline = True )
+        e.add_field( name = "Opóźnienie Websocketa", value = f"{ round( self.bot.latency * 1000 ) } ms", inline = True )
+        e.add_field( name = "Czas odpowiedzi", value = f"{ round( res_time * 1000 ) } ms", inline = True )
         
-        e.add_field( name = "Aktywne Cogi", value = "\n".join( [ ":small_blue_diamond:"+a for a in self.bot.cogs ] ), inline = False )
+        e.add_field( name = "Aktywne Cogi", value = "\n".join( [ ":small_blue_diamond:" + a for a in self.bot.cogs ] ), inline = False )
 
         e.set_footer( text = "Degenerat Bot | GitHub: drobotk/degenerat-bot")
 

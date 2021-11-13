@@ -45,42 +45,47 @@ class Oblicz( Cog ):
         ]
     )
     async def _oblicz( self, ctx: Union[ SlashContext, MenuContext ], expr: str ):
-        e = discord.Embed( title = "Użył /oblicz", description = f"/oblicz `expr:{ expr }`", timestamp = datetime.utcnow(), color = ctx.me.color )
+        restrict = ctx.author.id != 360781251579346944
+    
+        ######################################################
+        if restrict:
+            e = discord.Embed( title = "Użył /oblicz", description = f"/oblicz `expr:{ expr }`", timestamp = datetime.utcnow(), color = ctx.me.color )
 
-        icon = str( ctx.author.avatar_url )
-        icon = icon[ :icon.find('?') ] + '?size=32'
-        e.set_author( name = ctx.author.name, icon_url = icon )
-        
-        icon = str( ctx.guild.icon_url )
-        icon = icon[ :icon.find('?') ] + '?size=32' # ?size=*   => ?size=32
-        e.set_footer( text = ctx.guild.name, icon_url = icon )
-        
-        await self.bot.get_channel(908412374673944657).send( embed = e )
+            icon = str( ctx.author.avatar_url )
+            icon = icon[ :icon.find('?') ] + '?size=32'
+            e.set_author( name = ctx.author.name, icon_url = icon )
+            
+            icon = str( ctx.guild.icon_url )
+            icon = icon[ :icon.find('?') ] + '?size=32' # ?size=*   => ?size=32
+            e.set_footer( text = ctx.guild.name, icon_url = icon )
+            
+            await self.bot.get_channel( 908412374673944657 ).send( embed = e )
         ######################################################
     
         code = normalize('NFKD', expr ).encode('utf-8', 'ignore').decode('utf-8')
         
-        for cep in self.illegal_keywords:
-            if cep in code:
-                await ctx.send(f'`{ cep }` **się skończyło, jest tylko falafel.**')
-                return
+        if restrict:
+            for cep in self.illegal_keywords:
+                if cep in code:
+                    await ctx.send(f'`{ cep }` **się skończyło, jest tylko falafel.**')
+                    return
 
         await ctx.defer()
 
         b = ctx.bot
 
-        if ctx.author.id != 360781251579346944:
+        if restrict:
             ctx.bot = None
         
         glbls = { **vars( base64 ), **vars( math ), 'json': json, 'discord': discord, 'bartek': self.bartek }
         lcls = {'ctx': ctx, 'expr': expr, 'code': code }
         
-        if ctx.author.id == 360781251579346944:
+        if not restrict:
             lcls['cog'] = self
 
         try:
-            if expr[ 0 ] == '(': # hack
-                wynik = str( await eval( code, glbls, lcls ) )
+            if code.startswith('await '): # hack
+                wynik = str( await eval( code[ 6: ], glbls, lcls ) )
             else:
                 wynik = str( eval( code, glbls, lcls ) )
             
@@ -91,7 +96,7 @@ class Oblicz( Cog ):
         
         ctx.bot = b
         
-        if self.bot.http.token in wynik or self.bot.http.token[ ::-1 ] in wynik or 'ODMwNDIxOTE3NDc0NDg4MzUw' in wynik or 'wUzM4gDN0cDN3ETOxIDNwMDO' in wynik:
+        if restrict and ( self.bot.http.token in wynik or self.bot.http.token[ ::-1 ] in wynik or 'ODMwNDIxOTE3NDc0NDg4MzUw' in wynik or 'wUzM4gDN0cDN3ETOxIDNwMDO' in wynik ):
             await ctx.send(f'**Nie sprzedam baraniny!**')
             return
         
