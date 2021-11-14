@@ -7,9 +7,6 @@ from time import time, perf_counter
 class Status( Cog ):
     def __init__( self, bot: Bot ):
         self.bot = bot
-
-    @Cog.listener()
-    async def on_ready( self ):
         self.start_time = round( time() )
 
     @cog_ext.cog_slash(
