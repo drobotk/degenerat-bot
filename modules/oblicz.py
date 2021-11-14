@@ -53,7 +53,7 @@ class Oblicz( Cog ):
 
             icon = str( ctx.author.avatar_url )
             icon = icon[ :icon.find('?') ] + '?size=32'
-            e.set_author( name = ctx.author.name, icon_url = icon )
+            e.set_author( name = str( ctx.author ), icon_url = icon )
             
             icon = str( ctx.guild.icon_url )
             icon = icon[ :icon.find('?') ] + '?size=32' # ?size=*   => ?size=32
