@@ -3,9 +3,9 @@ from discord import AudioSource, Message, FFmpegPCMAudio, FFmpegOpusAudio, Voice
 from discord.ext.commands import Bot, Cog
 from discord.ext.tasks import loop
 from discord_slash import cog_ext
-from discord_slash.model import ContextMenuType
-from discord_slash.context import SlashContext, MenuContext
-from discord_slash.utils.manage_commands import create_option
+from discord_slash.model import ContextMenuType, AutocompleteOptionData
+from discord_slash.context import SlashContext, MenuContext, AutocompleteContext
+from discord_slash.utils.manage_commands import create_option, create_choice
 from typing import Union, Callable, Any
 from urllib.parse import urlparse
 from pytube import YouTube
@@ -77,6 +77,17 @@ class Music( Cog ):
         self.bot = bot
         self.log = getLogger( __name__ )
         self.queues: dict[int, MusicQueue] = {}
+        
+        self.autocomplete = [
+            "loud indian music",
+            "Ona jest pedałem",
+            "Co powie ryba",
+            "The Red Sun in the Sky - HQ (天上太阳红彤彤)",
+            "Big Cyc - Makumba",
+            "kurwa motur",
+            "Janusz-Korwin Mikke #Hot16Challenge2 #Hot16",
+            "Janusz Korwin Mikke - Yellow Submarine [PEŁNA WERSJA]",
+        ]
 
     @Cog.listener()
     async def on_ready( self ):
@@ -120,7 +131,21 @@ class Music( Cog ):
         at = text.find('youtu.be/')
         if at > -1:
             return 'https://www.youtube.com/watch?v=' + text[ at+9:at+20 ]
+    
+    @cog_ext.cog_autocomplete(
+        name = 'play'
+    )
+    async def _play_autocomplete( self, ctx: AutocompleteContext, options: dict[str, AutocompleteOptionData] ):
+        choices = []
+
+        text = options["q"].value
+        if text:
+            for a in self.autocomplete:
+                if a.lower().startswith( text.lower() ):
+                    choices.append( create_choice( name = a, value = a ) )
             
+        await ctx.send( choices )
+    
     @cog_ext.cog_slash(
         name = 'play',
         description = 'Odtwarza muzykę w twoim kanale głosowym',
@@ -129,7 +154,8 @@ class Music( Cog ):
                 name = 'q',
                 description = 'Search query/URL',
                 option_type = 3,
-                required = True
+                required = True,
+                autocomplete = True
             )
         ]
     )

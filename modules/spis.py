@@ -3,6 +3,9 @@ from discord.ext.commands import Bot, Cog
 from discord_slash import cog_ext
 from discord_slash.context import SlashContext
 
+class PagingView:
+    def __init__( self, 
+
 class Spis( Cog ):
     def __init__( self, bot: Bot ):
         self.bot = bot
@@ -12,27 +15,41 @@ class Spis( Cog ):
         description = 'Spis ludności'
     )
     async def _spis( self, ctx: SlashContext ):
-        ids = []
-        names = []
-        discs = []
-        
-        async for m in ctx.guild.fetch_members( limit = None ):
-            ids.append( str( m.id ) )
-            names.append( m.name )
-            discs.append('#' + m.discriminator )
-            
         e = Embed( title = 'Spis Ludności', color = ctx.me.color )
-        
-        e.add_field( name = 'Name', value = '\n'.join( names ), inline = True )
-        e.add_field( name = 'Discriminator', value = '\n'.join( discs ), inline = True )
-        e.add_field( name = 'ID', value = '\n'.join( ids ), inline = True )
-        
         icon = str( ctx.guild.icon_url )
         icon = icon[ :icon.find('?') ] + '?size=32' # ?size=*   => ?size=32
-        
         e.set_footer( text = ctx.guild.name, icon_url = icon )
+    
+        names = ''
+        discs = ''
+        ids = ''
+        
+        for i, m in enumerate( ctx.guild.members ):
+            if ( 
+                len( ids + str( m.id ) ) > 1024
+                or len( names + m.name ) > 1024
+                or len( discs + m.discriminator ) > 1024
+            ):
+                break
+        
+            names += m.name + '\n'
+            discs += m.discriminator + '\n'
+            ids += str( m.id ) + '\n'
+        
+        
+        
+        e.add_field( name = 'Name', value = names.strip("\n"), inline = True )
+        e.add_field( name = 'Discriminator', value = discs.strip("\n"), inline = True )
+        e.add_field( name = 'ID', value = ids.strip("\n"), inline = True )
         
         await ctx.send( embed = e )
+
+    @cog_ext.cog_component(
+        use_callback_name = False,
+        components = ["_spis_prev", "_spis_next"]
+    )
+    async def _spis_click( self, ctx: ComponentContext ):
+        pass
 
 def setup( bot: Bot ):
     bot.add_cog( Spis( bot ) )
