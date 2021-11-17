@@ -1,6 +1,6 @@
 async_property
 aiohttp
-discord.py[voice]
+discord.py[voice]==1.7.3
 git+https://github.com/drobotk/discord-interactions
 yt-dlp
 pyfiglet
