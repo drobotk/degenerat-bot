@@ -45,41 +45,6 @@ async def on_guild_join( guild ):
     
     await sync()
 
-
-# APPLICATION_COMMAND_AUTOCOMPLETE: {
-    # 'version': 1,
-    # 'type': 4,
-    # 'token': '...',
-    # 'member': {
-        # 'user': {
-            # 'username': 'RoboT', 'public_flags': 0, 'id': '360781251579346944', 'discriminator': '2675', 'avatar': '8392ceb0bc882151cd4624a49749699f'
-        # }, 
-        # 'roles': ['776550379080515584', '776551245682180196', '776555414077964329', '776551616647397386', '776551116300615691', '776551038970232843', '776551683151888404', '776550782744264735'],
-        # 'premium_since': None,
-        # 'permissions': '1099511627775',
-        # 'pending': False,
-        # 'nick': '-><- is for me?',
-        # 'mute': False,
-        # 'joined_at': '2019-07-09T11:25:33.910000+00:00',
-        # 'is_pending': False,
-        # 'deaf': False,
-        # 'communication_disabled_until': None,
-        # 'avatar': None
-    # },
-    # 'id': '909857221284859904',
-    # 'guild_id': '598112506338344973',
-    # 'data': {
-        # 'type': 1,
-        # 'options': [
-            # {'value': 'avbaaaa', 'type': 3, 'name': 'text', 'focused': True}
-        # ],
-        # 'name': 'figlet',
-        # 'id': '904158109805731880'
-    # },
-    # 'channel_id': '830466268062285866',
-    # 'application_id': '830421917474488350'
-# }
-
 def main():
     try:
         bot.load_extension("modules.stoi")

@@ -2,8 +2,7 @@ async_property
 aiohttp
 discord.py[voice]
 git+https://github.com/drobotk/discord-interactions
-git+https://github.com/drobotk/pytube
-Flask
+yt-dlp
 pyfiglet
 asyncssh
 cowsay

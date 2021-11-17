@@ -8,9 +8,9 @@ from discord_slash.context import SlashContext, MenuContext, AutocompleteContext
 from discord_slash.utils.manage_commands import create_option, create_choice
 from typing import Union, Callable, Any
 from urllib.parse import urlparse
-from pytube import YouTube
 from os import remove as osremove
 from logging import getLogger
+from yt_dlp import YoutubeDL
 
 class MusicQueueEntry:
     def __init__( self, title: str, audio_source: AudioSource, message: Message, after: Callable[[Exception], Any] = None ):
@@ -77,7 +77,7 @@ class Music( Cog ):
         self.bot = bot
         self.log = getLogger( __name__ )
         self.queues: dict[int, MusicQueue] = {}
-        
+        self.ydl = YoutubeDL( {"format": "bestaudio.2[ext=webm]", "logger": getLogger( __name__ + '.ydl') } )
         self.autocomplete = [
             "loud indian music",
             "Ona jest pedałem",
@@ -131,21 +131,7 @@ class Music( Cog ):
         at = text.find('youtu.be/')
         if at > -1:
             return 'https://www.youtube.com/watch?v=' + text[ at+9:at+20 ]
-    
-    @cog_ext.cog_autocomplete(
-        name = 'play'
-    )
-    async def _play_autocomplete( self, ctx: AutocompleteContext, options: dict[str, AutocompleteOptionData] ):
-        choices = []
 
-        text = options["q"].value
-        if text:
-            for a in self.autocomplete:
-                if a.lower().startswith( text.lower() ):
-                    choices.append( create_choice( name = a, value = a ) )
-            
-        await ctx.send( choices )
-    
     @cog_ext.cog_slash(
         name = 'play',
         description = 'Odtwarza muzykę w twoim kanale głosowym',
@@ -214,7 +200,21 @@ class Music( Cog ):
                 return
 
             await self.queue_youtube( ctx, queue, url )
-                
+    
+    @cog_ext.cog_autocomplete(
+        name = 'play'
+    )
+    async def _play_autocomplete( self, ctx: AutocompleteContext, options: dict[str, AutocompleteOptionData] ):
+        choices = []
+
+        text = options["q"].value
+        if text:
+            for a in self.autocomplete:
+                if a.lower().startswith( text.lower() ):
+                    choices.append( create_choice( name = a, value = a ) )
+            
+        await ctx.send( choices )
+    
     @cog_ext.cog_context_menu(
         name = 'Dodaj do kolejki',
         target = ContextMenuType.MESSAGE
@@ -240,74 +240,48 @@ class Music( Cog ):
 
     async def queue_youtube( self, ctx: Union[ SlashContext, MenuContext ], queue: MusicQueue, url: str ):
         reply = ctx.message.edit if ctx.message else ctx.send
-
-        try:
-            yt = YouTube( url, session = self.bot.http._HTTPClient__session )
-            title = await yt.title
-            
-        except Exception as e:
-            await reply( content = str( e ) )
-            return
-
-        try:
-            s = await yt.streams
-            if len( s ) < 1:
-                raise Exception()
-                
-            s = s.filter( type = 'audio').order_by('abr').desc()
-            if len( s ) < 1:
-                raise Exception()
-            
-        except:
-            e = Embed( title = f'**Brak dostępnych streamów audio**', description = f'{ title }\n({ url })', color = Color.red() )
-            await reply( embed = e )
-            return
-        
-        if len( s ) > 1:
-            s = s[ -2 ]
-        else:
-            s = s.first()
-
-        filesize = await s.filesize
-
-        if filesize > 10_000_000:
-            e = Embed( title = f'**Rozmiar pliku przekracza rozsądny limit 10MB**', description = f'{ title }\n({ url })', color = Color.red() )
-            await reply( embed = e )
-            return
-
-        e = Embed( title = 'Pobierańsko...', description = title, color = ctx.me.color )
-        e.set_thumbnail( url = f'https://i.ytimg.com/vi/{ yt.video_id }/mqdefault.jpg')
+    
+        e = Embed()
         e.set_footer( text = url )
-        
-        await reply( embed = e )
-
-        errors = 0
-
-        for i in range( 3 ):
-            try:
-                path = await s.download( filename = str( ctx.message.id ), skip_existing = False )
-                
-            except:
-                self.log.error('Failed to download stream')
-                errors += 1
-                
-            else:
-                break
+    
+        try:
+            info = await self.bot.loop.run_in_executor( None, lambda: self.ydl.extract_info( url, download = False ) )
+            title = info['title']
+            filesize = info['filesize']
+            thumb = info['thumbnail']
             
-        if errors == 3:
-            e = Embed( title = f'**Wystąpił błąd podczas pobierania pliku**', description = f'{ title }\n({ url })', color = Color.red() )
+        except Exception as err:
+            e = Embed( title = '**Wystąpił błąd**', description = str( err ), color = Color.red() )
+            await reply( embed = e )
+            return
+        
+        e.description = title
+        
+        if filesize > 10_000_000:
+            e.title = '**Rozmiar pliku przekracza rozsądny limit 10MB**'
+            e.color = Color.red()
+            await reply( embed = e )
+            return
+
+        e.title = 'Pobierańsko...'
+        e.color = ctx.me.color
+        e.set_thumbnail( url = thumb )
+        await reply( embed = e )
+        
+        filename = self.ydl.prepare_filename( info )
+        success, _ = await self.bot.loop.run_in_executor( None, lambda: self.ydl.dl( filename, info ) )
+        if not success:
+            e.title = '**Wystąpił błąd podczas pobierania pliku**'
+            e.color = Color.red()
             await ctx.message.edit( embed = e )
             return
             
-        after = lambda err: osremove( path )
-        
-        audio = await FFmpegOpusAudio.from_probe( path )
+        audio = await FFmpegOpusAudio.from_probe( filename )
 
         e.title = 'Odtwarzanie' if queue.empty else 'Dodano do kolejki'
-        
         await ctx.message.edit( embed = e )
         
-        entry = MusicQueueEntry( title, audio, ctx.message, after )
+        entry = MusicQueueEntry( title, audio, ctx.message )
         queue.add_entry( entry )
 
     @loop( seconds = 3.0 )
