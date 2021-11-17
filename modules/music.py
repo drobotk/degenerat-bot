@@ -334,6 +334,10 @@ class Music( Cog ):
                     queue.clear()
                 
             else: # moved to other channel
+                queue = self.queues.get( after.channel.guild.id )
+                if queue is not None:
+                    queue.voice_channel = after.channel
+            
                 self.log.info(f'Moved to vc "{ after.channel }"')
                 
         if not after.deaf:
