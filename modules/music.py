@@ -8,9 +8,10 @@ from discord_slash.context import SlashContext, MenuContext, AutocompleteContext
 from discord_slash.utils.manage_commands import create_option, create_choice
 from typing import Union, Callable, Any
 from urllib.parse import urlparse
-from os import remove as osremove
 from logging import getLogger
 from yt_dlp import YoutubeDL
+from os import mkdir
+from shutil import rmtree
 
 class MusicQueueEntry:
     def __init__( self, title: str, audio_source: AudioSource, message: Message, after: Callable[[Exception], Any] = None ):
@@ -77,7 +78,14 @@ class Music( Cog ):
         self.bot = bot
         self.log = getLogger( __name__ )
         self.queues: dict[int, MusicQueue] = {}
-        self.ydl = YoutubeDL( {"format": "bestaudio.2[ext=webm]", "logger": getLogger( __name__ + '.ydl') } )
+        
+        params = {
+            "no_color": True,
+            "format": self.format_selector,
+            "logger": getLogger( __name__ + '.ydl')
+        }
+        self.ydl = YoutubeDL( params )
+        
         self.autocomplete = [
             "loud indian music",
             "Ona jest pedałem",
@@ -88,6 +96,8 @@ class Music( Cog ):
             "Janusz-Korwin Mikke #Hot16Challenge2 #Hot16",
             "Janusz Korwin Mikke - Yellow Submarine [PEŁNA WERSJA]",
         ]
+        
+        rmtree("./yt", ignore_errors = True ) # remove previously downloaded audio
 
     @Cog.listener()
     async def on_ready( self ):
@@ -132,6 +142,16 @@ class Music( Cog ):
         if at > -1:
             return 'https://www.youtube.com/watch?v=' + text[ at+9:at+20 ]
 
+    def format_selector( self, ctx: dict ) -> list:
+        formats = ctx['formats']
+        formats = [ a for a in formats if a['acodec'] == 'opus' ]
+        if len( formats ) <= 1:
+            return formats
+        
+        # sort by audio bitrate and return second best
+        formats.sort( key = lambda a: a['abr'] ) 
+        return [ formats[ -2 ] ]
+
     @cog_ext.cog_slash(
         name = 'play',
         description = 'Odtwarza muzykę w twoim kanale głosowym',
@@ -148,7 +168,7 @@ class Music( Cog ):
     async def _play( self, ctx: Union[ SlashContext, MenuContext ], q: str ):
         ch = ctx.author.voice.channel if ctx.author.voice is not None else None
 
-        if ch == None:
+        if ch is None:
             await ctx.send('**Musisz być połączony z kanałem głosowym**', hidden = True )
             return
             
@@ -181,10 +201,8 @@ class Music( Cog ):
 
         else: # Search query
             e = Embed( description = f'Wyszukiwanie `{ q }`...', color = ctx.me.color )
-
             await ctx.send( embed = e )
-            
-            #async with ClientSession( headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0'} ) as s:
+
             async with self.bot.http._HTTPClient__session.get('https://www.youtube.com/results', params = {'search_query': q } ) as r:
                 if not r.ok:
                     await ctx.message.edit( content = f'**Coś poszło nie tak:** { r.status }')
@@ -268,7 +286,12 @@ class Music( Cog ):
         e.set_thumbnail( url = thumb )
         await reply( embed = e )
         
-        filename = self.ydl.prepare_filename( info )
+        try:
+            mkdir("./yt")
+        except FileExistsError:
+            pass
+        
+        filename = f"./yt/{ self.ydl.prepare_filename( info ) }"
         success, _ = await self.bot.loop.run_in_executor( None, lambda: self.ydl.dl( filename, info ) )
         if not success:
             e.title = '**Wystąpił błąd podczas pobierania pliku**'
@@ -323,10 +346,10 @@ class Music( Cog ):
             return
 
         if after.channel != before.channel:
-            if before.channel == None: # joined voice channel
+            if before.channel is None: # joined voice channel
                 self.log.info(f'Joined vc "{ after.channel }"')
                 
-            elif after.channel == None: # left voice channel
+            elif after.channel is None: # left voice channel
                 self.log.info(f'Left vc "{ before.channel }"')
                 
                 queue = self.queues.get( before.channel.guild.id )
