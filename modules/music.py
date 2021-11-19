@@ -228,6 +228,10 @@ class Music( Cog ):
             await ctx.send( [] )
             return
 
+        if q.startswith("http://") or q.startswith("https://"):
+            await ctx.send( [ create_choice( name = q[:100], value = q ) ] )
+            return
+
         title, url = await self.youtube_search( q )
         if not url:
             await ctx.send( [] )
