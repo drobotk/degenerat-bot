@@ -12,6 +12,8 @@ from logging import getLogger
 from yt_dlp import YoutubeDL
 from os import mkdir
 from shutil import rmtree
+from time import perf_counter
+import re
 
 class MusicQueueEntry:
     def __init__( self, title: str, audio_source: AudioSource, message: Message, after: Callable[[Exception], Any] = None ):
@@ -86,17 +88,8 @@ class Music( Cog ):
         }
         self.ydl = YoutubeDL( params )
         
-        self.autocomplete = [
-            "loud indian music",
-            "Ona jest pedałem",
-            "Co powie ryba",
-            "The Red Sun in the Sky - HQ (天上太阳红彤彤)",
-            "Big Cyc - Makumba",
-            "kurwa motur",
-            "Janusz-Korwin Mikke #Hot16Challenge2 #Hot16",
-            "Janusz Korwin Mikke - Yellow Submarine [PEŁNA WERSJA]",
-        ]
-        
+        self.re_title = re.compile(r'"title":{"runs":\[{"text":".{1,100}"}\],"accessibility')
+
         rmtree("./yt", ignore_errors = True ) # remove previously downloaded audio
 
     @Cog.listener()
@@ -133,7 +126,7 @@ class Music( Cog ):
         except:
             return False
 
-    def extract_yt_url( self, text: str ) -> bool:
+    def extract_yt_url( self, text: str ) -> str:
         at = text.find('/watch?v=')
         if at > -1:
             return 'https://www.youtube.com' + text[ at:at+20 ]
@@ -141,6 +134,11 @@ class Music( Cog ):
         at = text.find('youtu.be/')
         if at > -1:
             return 'https://www.youtube.com/watch?v=' + text[ at+9:at+20 ]
+
+    def extract_video_title( self, text: str ) -> str:
+        hit = self.re_title.search( text )
+        if hit:
+            return hit.group()[ 26:-18 ]
 
     def format_selector( self, ctx: dict ) -> list:
         formats = ctx['formats']
@@ -151,6 +149,17 @@ class Music( Cog ):
         # sort by audio bitrate and return second best
         formats.sort( key = lambda a: a['abr'] ) 
         return [ formats[ -2 ] ]
+
+    async def youtube_search( self, q: str ) -> tuple[str, str]:
+        async with self.bot.http._HTTPClient__session.get('https://www.youtube.com/results', params = {'search_query': q } ) as r:
+            if not r.ok:
+                return
+                
+            text = await r.text()
+
+        text = text[170000:]
+
+        return self.extract_video_title( text ), self.extract_yt_url( text )
 
     @cog_ext.cog_slash(
         name = 'play',
@@ -178,7 +187,6 @@ class Music( Cog ):
 
         if queue is None:
             queue = MusicQueue( ch, ctx.channel )
-
             self.queues[ ctx.guild.id ] = queue
             
         elif queue.message_channel != ctx.channel or queue.voice_channel != ch:
@@ -189,7 +197,7 @@ class Music( Cog ):
             if q.startswith('https://www.youtube.com/watch?v=') or q.startswith('https://youtu.be/'):
                 await self.queue_youtube( ctx, queue, q )
 
-            else: # arbitrary url
+            else: # arbitrary url, TODO: actually download the file and read metadata to put in embed (this would kill playing web streams tho?)
                 audio = FFmpegPCMAudio( q )
                 e = Embed( description = q, color = ctx.me.color )
                 e.title = 'Odtwarzanie' if queue.empty else 'Dodano do kolejki'
@@ -203,17 +211,9 @@ class Music( Cog ):
             e = Embed( description = f'Wyszukiwanie `{ q }`...', color = ctx.me.color )
             await ctx.send( embed = e )
 
-            async with self.bot.http._HTTPClient__session.get('https://www.youtube.com/results', params = {'search_query': q } ) as r:
-                if not r.ok:
-                    await ctx.message.edit( content = f'**Coś poszło nie tak:** { r.status }')
-                    return
-                    
-                text = await r.text()
-            
-            url = self.extract_yt_url( text )
+            _, url = await self.youtube_search( q )
             if not url:
                 e = Embed( description = f'Brak wyników wyszukiwania dla: `{ q }`', color = Color.red() )
-                
                 await ctx.message.edit( embed = e )
                 return
 
@@ -223,15 +223,17 @@ class Music( Cog ):
         name = 'play'
     )
     async def _play_autocomplete( self, ctx: AutocompleteContext, options: dict[str, AutocompleteOptionData] ):
-        choices = []
+        q = options["q"].value
+        if not q:
+            await ctx.send( [] )
+            return
 
-        text = options["q"].value
-        if text:
-            for a in self.autocomplete:
-                if a.lower().startswith( text.lower() ):
-                    choices.append( create_choice( name = a, value = a ) )
+        title, url = await self.youtube_search( q )
+        if not url:
+            await ctx.send( [] )
+            return
             
-        await ctx.send( choices )
+        await ctx.send( [ create_choice( name = (title or url)[:100], value = url ) ] )
     
     @cog_ext.cog_context_menu(
         name = 'Dodaj do kolejki',
@@ -363,9 +365,8 @@ class Music( Cog ):
             
                 self.log.info(f'Moved to vc "{ after.channel }"')
                 
-        if not after.deaf:
-            self.log.info('Undeafend!')
-            await member.edit( deafen = True )
+        if not after.self_deaf:
+            await member.guild.change_voice_state( channel = after.channel, self_deaf = True )
 
     @cog_ext.cog_slash(
         name = 'disconnect',
