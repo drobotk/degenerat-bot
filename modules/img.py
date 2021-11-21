@@ -49,6 +49,9 @@ class Img( Cog ):
                     if r.ok:
                         files.append( File( BytesIO( await r.read() ), f'{ self.make_safe_filename( q ) }{ k }.jpg') )
                         
+            if not files:
+                await ctx.send(f"**Brak wyników wyszukiwania dla:** `{ q }`")
+                return
             
             await ctx.send( files = files )
             

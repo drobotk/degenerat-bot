@@ -280,6 +280,7 @@ class Music( Cog ):
             return
         
         e.description = title
+        e.set_thumbnail( url = thumb )
         
         if filesize > 10_000_000:
             e.title = '**Rozmiar pliku przekracza rozsądny limit 10MB**'
@@ -289,7 +290,6 @@ class Music( Cog ):
 
         e.title = 'Pobierańsko...'
         e.color = ctx.me.color
-        e.set_thumbnail( url = thumb )
         await reply( embed = e )
         
         try:
