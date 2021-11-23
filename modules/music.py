@@ -353,10 +353,10 @@ class Music( Cog ):
 
         if after.channel != before.channel:
             if before.channel is None: # joined voice channel
-                self.log.info(f'Joined vc "{ after.channel }"')
+                self.log.info(f'Joined vc "{ after.channel }" ({ after.channel.guild.name })')
                 
             elif after.channel is None: # left voice channel
-                self.log.info(f'Left vc "{ before.channel }"')
+                self.log.info(f'Left vc "{ before.channel }" ({ before.channel.guild.name })')
                 
                 queue = self.queues.get( before.channel.guild.id )
                 if queue is not None:
@@ -367,7 +367,7 @@ class Music( Cog ):
                 if queue is not None:
                     queue.voice_channel = after.channel
             
-                self.log.info(f'Moved to vc "{ after.channel }"')
+                self.log.info(f'Moved to vc "{ after.channel }" ({ after.channel.guild.name })')
                 
         if not after.self_deaf:
             await member.guild.change_voice_state( channel = after.channel, self_deaf = True )
