@@ -29,8 +29,21 @@ class Oblicz( Cog ):
             'import',
             'token',
         ]
+        
+        self.illegal_in_output = []
 
         self.bartek = Bartek()
+
+    @Cog.listener()
+    async def on_ready( self ):
+        self.illegal_in_output = [
+            self.bot.http.token,
+            *self.bot.http.token.split(".")
+        ]
+        self.illegal_in_output = [
+            *self.illegal_in_output,
+            *[ x[::-1] for x in self.illegal_in_output ]
+        ]
 
     @cog_ext.cog_slash(
         name = 'oblicz',
@@ -45,10 +58,10 @@ class Oblicz( Cog ):
         ]
     )
     async def _oblicz( self, ctx: Union[ SlashContext, MenuContext ], expr: str ):
-        restrict = ctx.author.id != 360781251579346944
+        restrict = ctx.author.id != self.bot.appinfo.owner.id
     
         ######################################################
-        if restrict:
+        if restrict and ( logchannel := self.bot.get_channel( 908412374673944657 ) ):
             e = discord.Embed( title = "Użył /oblicz", description = f"/oblicz `expr:{ expr }`", timestamp = datetime.utcnow(), color = ctx.me.color )
 
             icon = str( ctx.author.avatar_url )
@@ -59,15 +72,15 @@ class Oblicz( Cog ):
             icon = icon[ :icon.find('?') ] + '?size=32' # ?size=*   => ?size=32
             e.set_footer( text = ctx.guild.name, icon_url = icon )
             
-            await self.bot.get_channel( 908412374673944657 ).send( embed = e )
+            await logchannel.send( embed = e )
         ######################################################
     
         code = normalize('NFKD', expr ).encode('utf-8', 'ignore').decode('utf-8')
         
         if restrict:
-            for cep in self.illegal_keywords:
-                if cep in code:
-                    await ctx.send(f'`{ cep }` **się skończyło, jest tylko falafel.**')
+            for k in self.illegal_keywords:
+                if k in code:
+                    await ctx.send(f'**Nielegalne słowo kluczowe:** `{ k }`')
                     return
 
         await ctx.defer()
@@ -91,14 +104,16 @@ class Oblicz( Cog ):
             
         except Exception as e:
             ctx.bot = b
-            await ctx.send(f'**Co ty damian, pedał jesteś?** { str( e ) }')
+            await ctx.send(f'**Błąd:** { str( e ) }')
             return
         
         ctx.bot = b
         
-        if restrict and ( self.bot.http.token in wynik or self.bot.http.token[ ::-1 ] in wynik or 'ODMwNDIxOTE3NDc0NDg4MzUw' in wynik or 'wUzM4gDN0cDN3ETOxIDNwMDO' in wynik ):
-            await ctx.send(f'**Nie sprzedam baraniny!**')
-            return
+        if restrict:
+            for x in self.illegal_in_output:
+                if x in wynik:
+                    await ctx.send(f'**Wykryto poufne treści w wyniku. Ten incident został zgłoszony do mojego administratora ({ self.bot.appinfo.owner.mention })**')
+                    return
         
         wynik = f'`{ expr }` = { wynik }'
         
@@ -110,10 +125,10 @@ class Oblicz( Cog ):
                 await ctx.send( file = discord.File( BytesIO( wynik.encode() ), 'wynik.txt') )
                 
             else:
-                await ctx.send('**Kapusta.** (Rozmiar wyniku przekracza limit tego serwera.)')
+                await ctx.send('**Błąd:** Rozmiar wyniku przekracza limit rozmiaru plików na tym serwerze.')
                 
         except Exception as e:
-            await ctx.send(f'**O skubany, jak to zrobiłeś?** { str( e ) }')
+            await ctx.send(f'**Nieoczekiwany błąd:** { str( e ) }')
 
     @cog_ext.cog_context_menu(
         name = 'Oblicz',

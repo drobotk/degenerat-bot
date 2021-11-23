@@ -32,8 +32,8 @@ class Info( Cog ):
         e.add_field( name = "Python", value = sys.version, inline = False )
         e.add_field( name = "discord.py", value = discord.__version__, inline = False )
         
-        link = f'https://discord.com/api/oauth2/authorize?client_id={ ctx.me.id }&permissions=34371529792&scope=bot%20applications.commands'
-        components = [ create_actionrow( create_button( style = ButtonStyle.URL, label = "Invite", url = link ) ) ]
+        link = f'https://discord.com/api/oauth2/authorize?client_id={ ctx.me.id }&permissions=412857396288&scope=bot%20applications.commands'
+        components = [ create_actionrow( create_button( style = ButtonStyle.URL, label = "Dodaj do serwera", url = link ) ) ]
         
         await ctx.send( embed = e, components = components )
 

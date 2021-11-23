@@ -27,7 +27,7 @@ class Status( Cog ):
         
         e.add_field( name = "Aktywne Cogi", value = "\n".join( [ ":small_blue_diamond:" + a for a in self.bot.cogs ] ), inline = False )
 
-        e.set_footer( text = "Degenerat Bot | GitHub: drobotk/degenerat-bot")
+        e.set_footer( text = "Degenerat Bot")
 
         await ctx.message.edit( content = None, embed = e )
 

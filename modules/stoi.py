@@ -41,7 +41,8 @@ class Stoi( Cog ):
 
     @cog_ext.cog_slash(
         name = 'stoi',
-        description = 'Sprawdza czy debil stoi'
+        description = 'Sprawdza czy debil stoi',
+        guild_ids = [ 655112863391940618, 751455317568651294, 598112506338344973 ] # jfl, ex, cmg
     )
     async def _stoi( self, ctx: SlashContext ):
         await ctx.defer()
@@ -71,7 +72,7 @@ class Stoi( Cog ):
             5:  'Heartbeat'
         }
         
-        async with self.bot.http._HTTPClient__session.post('https://api.uptimerobot.com/v2/getMonitors', data = f'api_key={ environ["uptime"] }&format=json&logs=1', headers = {'content-type':'application/x-www-form-urlencoded','cache-control':'no-cache'} ) as r:
+        async with self.bot.http._HTTPClient__session.post('https://api.uptimerobot.com/v2/getMonitors', data = f'api_key={ environ["UPTIME_TOKEN"] }&format=json&logs=1', headers = {'content-type':'application/x-www-form-urlencoded','cache-control':'no-cache'} ) as r:
             if not r.ok:
                 return
                 
