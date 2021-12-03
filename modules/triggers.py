@@ -1,11 +1,18 @@
-from discord import AllowedMentions
+from discord import Message, AllowedMentions
 from discord.ext.commands import Bot, Cog
 
 class Triggers( Cog ):
     def __init__( self, bot: Bot ):
         self.bot = bot
         
+        # eq
         self.triggers = {
+            'sus':      'amogus',
+            'amogus':   'ඞ',
+        }
+        
+        # eq or ends with
+        self.end_triggers = {
             'huj': 'ci w dupę',
             'chuj': 'ci w dupę',
             'można?': '*Można. Jak najbardziej. Jeszcze jak.*',
@@ -18,24 +25,57 @@ class Triggers( Cog ):
             'jak pan jezus powiedział ?': '*Tak jak Pan Jezus powiedział*',
             'erika': '*Auf der Heide blüht ein kleines Blümelein\nUnd das heißt:\nErika\nHeiß von hunderttausend kleinen Bienelein\nWird umschwärmt:\nErika\nDenn ihr Herz ist voller Süßigkeit\nZarter Duft entströmt dem Blütenkleid\nAuf der Heide blüht ein kleines Blümelein\nUnd das heißt:\nErika\n\nIn der Heimat wohnt ein kleines Mädelein\nUnd das heißt:\nErika\nDieses Mädel ist mein treues Schätzelein\nUnd mein Glück\nErika\nWenn das Heidekraut rot-lila blüht\nSinge ich zum Gruß ihr dieses Lied\nAuf der Heide blüht ein kleines Blümelein\nUnd das heißt:\nErika\n\nIn mein´m Kämmerlein blüht auch ein Blümelein\nUnd das heißt:\nErika\nSchon beim Morgengrau´n sowie beim Dämmerschein\nSchaut´s mich an\nErika\nUnd dann ist es mir als spräch´ es laut:\nDenkst du auch an deine kleine Braut?\nIn der Heimat weint um dich ein Mädelein\nUnd das heißt:\nErika*'
         }
+        
+        self.spelling = {
+            'muj':      '_*mój_',
+            'jóż':      '_*już_',
+            'józ':      '_*już_',
+            'joż':      '_*już_',
+            'ktury':    '_*który_',
+            'ktura':    '_*która_',
+            'kturego':  '_*którego_',
+            'kturzy':   '_*którzy_',
+            'twuj':     '_*twój_',
+            'hyba':     '_*chyba_',
+            'puzniej':  '_*później_',
+            'puźniej':  '_*później_',
+            'ogulnie':  '_*ogólnie_',
+            'ogulne':   '_*ogólne_',
+            'ogulny':   '_*ogólny_',
+            'ogulna':   '_*ogólna_',
+        }
 
-    def has_trigger( self, input: str, trigger: str ) -> bool:
-        return input == trigger or input.endswith(' ' + trigger )
+    def spellcheck( self, input: str ) -> str:
+        words = input.split(' ')
+        corrected = ' '.join( set( [ self.spelling[ t ] for t in self.spelling if t in words ] ) )
+        if corrected:
+            corrected += ', debilu głupi'
+            
+        return corrected
+
+    def check_triggers( self, input: str ) -> str:
+        # end triggers first
+        for t in self.end_triggers:
+            if input == t or input.endswith(' ' + t ):
+                return self.end_triggers[ t ]
+                
+        for t in self.triggers:
+            if input == t:
+                return self.triggers[ t ]
+
+        return self.spellcheck( input )
 
     @Cog.listener()
-    async def on_message( self, message ):
+    async def on_message( self, message: Message ):
         if message.author.bot or not message.content:
             return
-            
-        msg = message.content.lower()
-    
-        if msg.startswith( self.bot.command_prefix ):
+        
+        if message.content.startswith( self.bot.command_prefix ):
             return
-            
-        for t in self.triggers:
-            if self.has_trigger( msg, t ):
-                await message.reply( self.triggers[ t ], allowed_mentions = AllowedMentions( replied_user = False ) )
-                break
+
+        res = self.check_triggers( message.content.lower() )
+        if res:
+            await message.reply( res, allowed_mentions = AllowedMentions( replied_user = False ) )
     
 def setup( bot: Bot ):
     bot.add_cog( Triggers( bot ) )

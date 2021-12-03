@@ -90,7 +90,7 @@ class Music( Cog ):
         
         self.re_title = re.compile(r'"title":{"runs":\[{"text":".{1,100}"}\],"accessibility')
 
-        rmtree("./yt", ignore_errors = True ) # remove previously downloaded audio
+        #rmtree("./yt", ignore_errors = True ) # remove previously downloaded audio
 
     @Cog.listener()
     async def on_ready( self ):

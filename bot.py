@@ -41,7 +41,7 @@ async def sync_commands():
                 _log.warning(f"Application command { name } has no allowed_guild_ids. Removing")
                 slash.commands.pop( name )
     
-    _log.debug(f'Application ommands to sync: { ", ".join( slash.commands.keys() ) }')
+    _log.debug(f'Application commands to sync: { ", ".join( slash.commands.keys() ) }')
     
     await slash.sync_all_commands()
 

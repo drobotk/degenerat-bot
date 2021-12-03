@@ -5,8 +5,13 @@ from discord_slash.context import SlashContext
 
 # TODO
 
-class PagingView:
-    def __init__( self, 
+class PaginationView:
+    def __init__( self, pages: list[Embed] ):
+        self.components = []
+        self.pages = pages
+        self.current = 0
+
+    def next
 
 class Spis( Cog ):
     def __init__( self, bot: Bot ):
