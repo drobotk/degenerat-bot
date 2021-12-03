@@ -6,3 +6,4 @@ git+https://github.com/yt-dlp/yt-dlp
 pyfiglet
 asyncssh
 cowsay
+jishaku

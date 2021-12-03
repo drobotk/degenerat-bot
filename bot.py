@@ -75,6 +75,7 @@ def main():
         bot.load_extension("modules.status")
         bot.load_extension("modules.triggers")
         bot.load_extension("modules.info")
+        bot.load_extension("jishaku")
         
         bot.run( environ["DISCORD_TOKEN"] )
         
