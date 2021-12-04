@@ -9,6 +9,7 @@ class Triggers( Cog ):
         self.triggers = {
             'sus':      'amogus',
             'amogus':   'ඞ',
+            'czy sex?': '*Jeszcze nie.*',
         }
         
         # eq or ends with
