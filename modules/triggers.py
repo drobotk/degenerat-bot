@@ -10,6 +10,9 @@ class Triggers( Cog ):
             'sus':      'amogus',
             'amogus':   'ඞ',
             'czy sex?': '*Jeszcze nie.*',
+            'czy sex ?': '*Jeszcze nie.*',
+            'czy seks?': '*Jeszcze nie.*',
+            'czy seks ?': '*Jeszcze nie.*',
         }
         
         # eq or ends with
