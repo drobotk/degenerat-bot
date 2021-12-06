@@ -34,7 +34,7 @@ class Activities( Cog ):
     def cog_unload( self ):
         self.update.cancel()
 
-    @loop( seconds = 10.0 )
+    @loop( minutes = 1.0 )
     async def update( self ):
         me = self.bot.guilds[ 0 ].me
         if me is None:

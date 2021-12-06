@@ -81,6 +81,8 @@ class Music( Cog ):
         self.log = getLogger( __name__ )
         self.queues: dict[int, MusicQueue] = {}
         
+        self.limit_mb = 25
+        
         params = {
             "no_color": True,
             "format": self.format_selector,
@@ -282,8 +284,8 @@ class Music( Cog ):
         e.description = title
         e.set_thumbnail( url = thumb )
         
-        if filesize > 10_000_000:
-            e.title = '**Rozmiar pliku przekracza rozsądny limit 10MB**'
+        if filesize > self.limit_mb * 1_000_000:
+            e.title = f'**Rozmiar pliku przekracza rozsądny limit {self.limit_mb}MB**'
             e.color = Color.red()
             await reply( embed = e )
             return
