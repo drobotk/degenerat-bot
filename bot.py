@@ -2,7 +2,6 @@ from sys import argv, exit
 from discord import Intents
 from discord.ext.commands import Bot
 from discord_slash import SlashCommand
-from base64 import b64decode
 from os import environ
 
 import logging

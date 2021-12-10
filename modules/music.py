@@ -127,7 +127,17 @@ class Music( Cog ):
             
         except:
             return False
-
+    
+    def format_selector( self, ctx: dict ) -> list:
+        formats = ctx['formats']
+        formats = [ a for a in formats if a['acodec'] == 'opus' ]
+        if len( formats ) <= 1:
+            return formats
+        
+        # sort by audio bitrate and return second best
+        formats.sort( key = lambda a: a['abr'] ) 
+        return [ formats[ -2 ] ]
+    
     def extract_yt_url( self, text: str ) -> str:
         at = text.find('/watch?v=')
         if at > -1:
@@ -141,16 +151,6 @@ class Music( Cog ):
         hit = self.re_title.search( text )
         if hit:
             return hit.group()[ 26:-18 ]
-
-    def format_selector( self, ctx: dict ) -> list:
-        formats = ctx['formats']
-        formats = [ a for a in formats if a['acodec'] == 'opus' ]
-        if len( formats ) <= 1:
-            return formats
-        
-        # sort by audio bitrate and return second best
-        formats.sort( key = lambda a: a['abr'] ) 
-        return [ formats[ -2 ] ]
 
     async def youtube_search( self, q: str ) -> tuple[str, str]:
         async with self.bot.http._HTTPClient__session.get('https://www.youtube.com/results', params = {'search_query': q } ) as r:
