@@ -1,4 +1,4 @@
-from discord import Embed, Color, VoiceChannel, VoiceClient, TextChannel, Member
+from discord import Embed, Colour, VoiceChannel, VoiceClient, TextChannel, Member
 from discord import AudioSource, Message, FFmpegPCMAudio, FFmpegOpusAudio, VoiceState
 from discord.ext.commands import Bot, Cog
 from discord.ext.tasks import loop
@@ -11,8 +11,6 @@ from urllib.parse import urlparse
 from logging import getLogger
 from yt_dlp import YoutubeDL
 from os import mkdir
-from shutil import rmtree
-from time import perf_counter
 import re
 
 class MusicQueueEntry:
@@ -215,7 +213,7 @@ class Music( Cog ):
 
             _, url = await self.youtube_search( q )
             if not url:
-                e = Embed( description = f'Brak wyników wyszukiwania dla: `{ q }`', color = Color.red() )
+                e = Embed( description = f'Brak wyników wyszukiwania dla: `{ q }`', color = Colour.red() )
                 await ctx.message.edit( embed = e )
                 return
 
@@ -277,7 +275,7 @@ class Music( Cog ):
             thumb = info['thumbnail']
             
         except Exception as err:
-            e = Embed( title = '**Wystąpił błąd**', description = str( err ), color = Color.red() )
+            e = Embed( title = '**Wystąpił błąd**', description = str( err ), color = Colour.red() )
             await reply( embed = e )
             return
         
@@ -286,7 +284,7 @@ class Music( Cog ):
         
         if filesize > self.limit_mb * 1_000_000:
             e.title = f'**Rozmiar pliku przekracza rozsądny limit {self.limit_mb}MB**'
-            e.color = Color.red()
+            e.color = Colour.red()
             await reply( embed = e )
             return
 
@@ -303,7 +301,7 @@ class Music( Cog ):
         success, _ = await self.bot.loop.run_in_executor( None, lambda: self.ydl.dl( filename, info ) )
         if not success:
             e.title = '**Wystąpił błąd podczas pobierania pliku**'
-            e.color = Color.red()
+            e.color = Colour.red()
             await ctx.message.edit( embed = e )
             return
             
