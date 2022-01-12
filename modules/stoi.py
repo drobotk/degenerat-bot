@@ -48,6 +48,7 @@ class Stoi( Cog ):
         await ctx.defer()
 
         e = Embed()
+        content = ""
 
         try:
             async with sshconnect('62.122.235.235', port = 2200, options = self.sshopts ) as _:
@@ -58,11 +59,11 @@ class Stoi( Cog ):
             e.color = Color.red()
             e.title = '**Nie :x:**'
             
-            if ctx.guild.get_member( 473849794381611021 ):
-                e.title += '<@473849794381611021> :exclamation:'
+            if ctx.guild.get_member( 911698452457611334 ):
+                content = '<@911698452457611334> :exclamation:'
         
         finally:
-            await ctx.send( embed = e )
+            await ctx.send( content, embed = e )
 
         typesToString = {
             1:  'HTTP',

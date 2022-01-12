@@ -2,6 +2,7 @@
 *.sh
 *.pyc
 *.json
+*.code-workspace
 __pycache__/
 backup/
 discord-interactions/

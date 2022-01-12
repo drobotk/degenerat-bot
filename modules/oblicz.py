@@ -58,7 +58,7 @@ class Oblicz( Cog ):
         ]
     )
     async def _oblicz( self, ctx: Union[ SlashContext, MenuContext ], expr: str ):
-        restrict = ctx.author.id != self.bot.appinfo.owner.id
+        restrict = ctx.author.id != self.bot.appinfo.owner.id if self.bot.appinfo is not None else True
     
         ######################################################
         if restrict and ( logchannel := self.bot.get_channel( 908412374673944657 ) ):
