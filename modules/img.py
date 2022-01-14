@@ -8,65 +8,70 @@ from typing import Union
 from xml.dom.minidom import parseString
 from io import BytesIO
 
-class Img( Cog ):
-    def __init__( self, bot: Bot ):
+
+class Img(Cog):
+    def __init__(self, bot: Bot):
         self.bot = bot
 
-    def make_safe_filename( self, s ):
-        return ''.join( ( c if c.isalnum() or c == '.' else '_') for c in s )
+    def make_safe_filename(self, s):
+        return "".join((c if c.isalnum() or c == "." else "_") for c in s)
 
     @cog_ext.cog_slash(
-        name = 'img',
-        description = 'Wyszukuje hujowo małe obrazki',
-        options = [
+        name="img",
+        description="Wyszukuje hujowo małe obrazki",
+        options=[
             create_option(
-                name = 'q',
-                description = 'Search query',
-                option_type = 3,
-                required = True
+                name="q", description="Search query", option_type=3, required=True
             )
-        ]
+        ],
     )
-    async def _img( self, ctx: Union[ SlashContext, MenuContext ], q: str ):
+    async def _img(self, ctx: Union[SlashContext, MenuContext], q: str):
         await ctx.defer()
 
         try:
-            async with self.bot.http._HTTPClient__session.get('https://www.google.com/search', params = {'tbm': 'isch', 'q': q }, headers = {'User-Agent': 'degenerat-bot/2137'} ) as r:
+            async with self.bot.http._HTTPClient__session.get(
+                "https://www.google.com/search",
+                params={"tbm": "isch", "q": q},
+                headers={"User-Agent": "degenerat-bot/2137"},
+            ) as r:
                 if not r.ok:
-                    raise Exception(f'{ r.url } got { r.status }')
-                
-                text = await r.text()
-            
-            doc = parseString( text )
+                    raise Exception(f"{ r.url } got { r.status }")
 
-            img = [ x.getAttribute('src') for x in doc.getElementsByTagName('img') ]
-            img = img[ 1:4 ]
-            
+                text = await r.text()
+
+            doc = parseString(text)
+
+            img = [x.getAttribute("src") for x in doc.getElementsByTagName("img")]
+            img = img[1:4]
+
             files = []
-            
-            for k, v in enumerate( img ):
-                async with self.bot.http._HTTPClient__session.get( v ) as r:
+
+            for k, v in enumerate(img):
+                async with self.bot.http._HTTPClient__session.get(v) as r:
                     if r.ok:
-                        files.append( File( BytesIO( await r.read() ), f'{ self.make_safe_filename( q ) }{ k }.jpg') )
-                        
+                        files.append(
+                            File(
+                                BytesIO(await r.read()),
+                                f"{ self.make_safe_filename( q ) }{ k }.jpg",
+                            )
+                        )
+
             if not files:
                 await ctx.send(f"**Brak wyników wyszukiwania dla:** `{ q }`")
                 return
-            
-            await ctx.send( files = files )
-            
+
+            await ctx.send(files=files)
+
         except Exception as e:
-            await ctx.send(f'**Coś poszło nie tak:** { str( e ) }')
+            await ctx.send(f"**Coś poszło nie tak:** { str( e ) }")
 
-    @cog_ext.cog_context_menu(
-        name = 'Image Search',
-        target = ContextMenuType.MESSAGE
-    )
-    async def _img_context( self, ctx: MenuContext ):
+    @cog_ext.cog_context_menu(name="Image Search", target=ContextMenuType.MESSAGE)
+    async def _img_context(self, ctx: MenuContext):
         if ctx.target_message.content:
-            await self._img.func( self, ctx, ctx.target_message.content )
+            await self._img.func(self, ctx, ctx.target_message.content)
         else:
-            await ctx.send('**Błąd: Wiadomość bez treści**', hidden = True )    
+            await ctx.send("**Błąd: Wiadomość bez treści**", hidden=True)
 
-def setup( bot: Bot ):
-    bot.add_cog( Img( bot ) )
+
+def setup(bot: Bot):
+    bot.add_cog(Img(bot))
