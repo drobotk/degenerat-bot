@@ -9,4 +9,5 @@ discord-interactions/
 pytube/
 modules/__pycache__/
 modules/_.py
+modules/spis.py
 yt/
