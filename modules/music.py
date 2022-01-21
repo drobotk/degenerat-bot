@@ -153,14 +153,14 @@ class Music(Cog):
         formats.sort(key=lambda a: a["abr"])
         return [formats[-2]]
 
-    def extract_yt_id(self, text: str) -> str:
+    def extract_yt_url(self, text: str) -> str:
         m = self.re_link.search(text)
-        return m.group(1) if m else None
+        return f"https://www.youtube.com/watch?v={m.group(1)}" if m else None
 
     def extract_search_results(self, text: str, amount: int) -> list[tuple[str, str]]:
         result = []
         for i, m in enumerate(self.re_search_results.finditer(text), 1):
-            result.append((m.group(1), m.group(2)))
+            result.append((f"https://www.youtube.com/watch?v={m.group(1)}", m.group(2)))
             if i == amount:
                 break
 
@@ -209,9 +209,9 @@ class Music(Cog):
             queue.message_channel = ctx.channel
             queue.voice_channel = ch
 
-        vid = self.extract_yt_id(q)
-        if vid:
-            await self.queue_youtube(ctx, queue, vid)
+        url = self.extract_yt_url(q)
+        if url:
+            await self.queue_youtube(ctx, queue, url)
 
         elif self.is_url(
             q
@@ -258,24 +258,19 @@ class Music(Cog):
             await ctx.send([])
             return
 
-        await ctx.send(
-            [
-                create_choice(name=r[1][:100], value=f"https://youtu.be/{r[0]}")
-                for r in results
-            ]
-        )
+        await ctx.send([create_choice(name=r[1][:100], value=r[0]) for r in results])
 
     @cog_ext.cog_context_menu(name="Dodaj do kolejki", target=ContextMenuType.MESSAGE)
     async def _play_context(self, ctx: MenuContext):
         if ctx.target_message.content:
-            url = self.extract_yt_id(ctx.target_message.content)
+            url = self.extract_yt_url(ctx.target_message.content)
             await self._play.func(self, ctx, url or ctx.target_message.content)
 
         elif ctx.target_message.embeds:
             e = ctx.target_message.embeds[0]
             text = str(e.to_dict())
 
-            url = self.extract_yt_id(text)
+            url = self.extract_yt_url(text)
             if url:
                 await self._play.func(self, ctx, url)
 
@@ -291,7 +286,7 @@ class Music(Cog):
         reply = ctx.message.edit if ctx.message else ctx.send
 
         e = Embed()
-        e.set_footer(text=(q if self.is_url(q) else f"https://youtu.be/{q}"))
+        e.set_footer(text=q)
 
         try:
             info = await self.bot.loop.run_in_executor(
