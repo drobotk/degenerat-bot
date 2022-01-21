@@ -99,8 +99,7 @@ class Stoi(Cog):
 
             dur = self.get_duration_str(dur)
 
-            e.add_field(name=typ, value=f"**{ status }** - { dur }", inline=False)
-
+            e.add_field(name=f'{m["friendly_name"]} - {typ}', value=f"**{ status }** - { dur }", inline=False) 
         e.description = "_ _"
 
         await ctx.message.edit(embed=e)
