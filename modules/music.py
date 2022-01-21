@@ -99,11 +99,13 @@ class Music(Cog):
         }
         self.ydl = YoutubeDL(params)
 
-        self.re_title = re.compile(
-            r'"title":{"runs":\[{"text":".{1,100}"}\],"accessibility'
+        self.re_link = re.compile(
+            r"(?:https?:\/\/)?(?:www\.|m\.)?youtu(?:\.be\/|be.com\/\S*(?:watch|embed)(?:(?:(?=\/[^&\s\?]+(?!\S))\/)|(?:\S*v=|v\/)))([^\"&\s\?]+)"
         )
 
-        # rmtree("./yt", ignore_errors = True ) # remove previously downloaded audio
+        self.re_search_results = re.compile(
+            r'"videoRenderer":{"videoId":"(.{11})"(?:.+?)"title":{"runs":\[{"text":"(.+?)"}\],"accessibility"'
+        )
 
     @Cog.listener()
     async def on_ready(self):
@@ -151,21 +153,20 @@ class Music(Cog):
         formats.sort(key=lambda a: a["abr"])
         return [formats[-2]]
 
-    def extract_yt_url(self, text: str) -> str:
-        at = text.find("/watch?v=")
-        if at > -1:
-            return "https://www.youtube.com" + text[at : at + 20]
+    def extract_yt_id(self, text: str) -> str:
+        m = self.re_link.search(text)
+        return m.group(1) if m else None
 
-        at = text.find("youtu.be/")
-        if at > -1:
-            return "https://www.youtube.com/watch?v=" + text[at + 9 : at + 20]
+    def extract_search_results(self, text: str, amount: int) -> list[tuple[str, str]]:
+        result = []
+        for i, m in enumerate(self.re_search_results.finditer(text), 1):
+            result.append((m.group(1), m.group(2)))
+            if i == amount:
+                break
 
-    def extract_video_title(self, text: str) -> str:
-        hit = self.re_title.search(text)
-        if hit:
-            return hit.group()[26:-18]
+        return result
 
-    async def youtube_search(self, q: str) -> tuple[str, str]:
+    async def youtube_search(self, q: str, amount: int) -> list[tuple[str, str]]:
         async with self.bot.http._HTTPClient__session.get(
             "https://www.youtube.com/results", params={"search_query": q}
         ) as r:
@@ -174,9 +175,7 @@ class Music(Cog):
 
             text = await r.text()
 
-        text = text[170000:]
-
-        return self.extract_video_title(text), self.extract_yt_url(text)
+        return self.extract_search_results(text, amount)
 
     @cog_ext.cog_slash(
         name="play",
@@ -210,28 +209,28 @@ class Music(Cog):
             queue.message_channel = ctx.channel
             queue.voice_channel = ch
 
-        if self.is_url(q):
-            if q.startswith("https://www.youtube.com/watch?v=") or q.startswith(
-                "https://youtu.be/"
-            ):
-                await self.queue_youtube(ctx, queue, q)
+        vid = self.extract_yt_id(q)
+        if vid:
+            await self.queue_youtube(ctx, queue, vid)
 
-            else:  # arbitrary url, TODO: actually download the file and read metadata to put in embed (this would kill playing web streams tho?)
-                audio = FFmpegPCMAudio(q)
-                e = Embed(description=q, color=ctx.me.color)
-                e.title = "Odtwarzanie" if queue.empty else "Dodano do kolejki"
+        elif self.is_url(
+            q
+        ):  # arbitrary url, TODO: actually download the file and read metadata to put in embed (this would kill playing web streams tho?)
+            audio = FFmpegPCMAudio(q)
+            e = Embed(description=q, color=ctx.me.color)
+            e.title = "Odtwarzanie" if queue.empty else "Dodano do kolejki"
 
-                msg = await ctx.send(embed=e)
+            msg = await ctx.send(embed=e)
 
-                entry = MusicQueueEntry(q, audio, msg)
-                queue.add_entry(entry)
+            entry = MusicQueueEntry(q, audio, msg)
+            queue.add_entry(entry)
 
         else:  # Search query
             e = Embed(description=f"Wyszukiwanie `{ q }`...", color=ctx.me.color)
             await ctx.send(embed=e)
 
-            _, url = await self.youtube_search(q)
-            if not url:
+            results = await self.youtube_search(q, 1)
+            if not results:
                 e = Embed(
                     description=f"Brak wyników wyszukiwania dla: `{ q }`",
                     color=Colour.red(),
@@ -239,7 +238,7 @@ class Music(Cog):
                 await ctx.message.edit(embed=e)
                 return
 
-            await self.queue_youtube(ctx, queue, url)
+            await self.queue_youtube(ctx, queue, results[0][0])
 
     @cog_ext.cog_autocomplete(name="play")
     async def _play_autocomplete(
@@ -254,24 +253,29 @@ class Music(Cog):
             await ctx.send([create_choice(name=q[:100], value=q)])
             return
 
-        title, url = await self.youtube_search(q)
-        if not url:
+        results = await self.youtube_search(q, 5)
+        if not results:
             await ctx.send([])
             return
 
-        await ctx.send([create_choice(name=(title or url)[:100], value=url)])
+        await ctx.send(
+            [
+                create_choice(name=r[1][:100], value=f"https://youtu.be/{r[0]}")
+                for r in results
+            ]
+        )
 
     @cog_ext.cog_context_menu(name="Dodaj do kolejki", target=ContextMenuType.MESSAGE)
     async def _play_context(self, ctx: MenuContext):
         if ctx.target_message.content:
-            url = self.extract_yt_url(ctx.target_message.content)
+            url = self.extract_yt_id(ctx.target_message.content)
             await self._play.func(self, ctx, url or ctx.target_message.content)
 
         elif ctx.target_message.embeds:
             e = ctx.target_message.embeds[0]
             text = str(e.to_dict())
 
-            url = self.extract_yt_url(text)
+            url = self.extract_yt_id(text)
             if url:
                 await self._play.func(self, ctx, url)
 
@@ -282,16 +286,16 @@ class Music(Cog):
             await ctx.send("**Błąd: Nie wykryto pasującej treści**", hidden=True)
 
     async def queue_youtube(
-        self, ctx: Union[SlashContext, MenuContext], queue: MusicQueue, url: str
+        self, ctx: Union[SlashContext, MenuContext], queue: MusicQueue, q: str
     ):
         reply = ctx.message.edit if ctx.message else ctx.send
 
         e = Embed()
-        e.set_footer(text=url)
+        e.set_footer(text=(q if self.is_url(q) else f"https://youtu.be/{q}"))
 
         try:
             info = await self.bot.loop.run_in_executor(
-                None, lambda: self.ydl.extract_info(url, download=False)
+                None, lambda: self.ydl.extract_info(q, download=False)
             )
             title = info["title"]
             filesize = info["filesize"]
