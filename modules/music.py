@@ -90,7 +90,7 @@ class Music(Cog):
         self.log = getLogger(__name__)
         self.queues: dict[int, MusicQueue] = {}
 
-        self.limit_mb = 25
+        self.limit_mb = 100
 
         params = {
             "no_color": True,
