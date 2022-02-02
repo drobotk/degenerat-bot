@@ -85,7 +85,7 @@ def main():
         bot.load_extension("modules.img")
         bot.load_extension("modules.ryj")
         bot.load_extension("modules.ttt")
-        bot.load_extension("modules.music")
+        bot.load_extension("modules.music.cog")
         bot.load_extension("modules.status")
         bot.load_extension("modules.triggers")
         bot.load_extension("modules.info")
