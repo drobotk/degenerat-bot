@@ -356,16 +356,12 @@ class Music(Cog, Youtube, Genius):
 
         await ctx.send(":ok_hand:")
 
-    
     @cog_ext.cog_slash(
         name="lyrics",
         description="Pobiera tekst piosenki",
         options=[
             create_option(
-                name="q",
-                description="Search query",
-                option_type=3,
-                required=False
+                name="q", description="Search query", option_type=3, required=False
             )
         ],
     )
@@ -387,9 +383,10 @@ class Music(Cog, Youtube, Genius):
         await ctx.send(f"**Tekst dla** `{resolved}`")  # empty response
 
         # pagination for discord 2000 character limit
-        pages = [lyrics[i:i+2000] for i in range(0, len(lyrics), 2000)]
+        pages = [lyrics[i : i + 2000] for i in range(0, len(lyrics), 2000)]
         for p in pages:
             await ctx.channel.send(p)
+
 
 def setup(bot: Bot):
     bot.add_cog(Music(bot))

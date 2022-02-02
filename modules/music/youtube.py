@@ -47,7 +47,7 @@ class Youtube:
         for i, m in enumerate(self.re_search_results.finditer(text), 1):
             vid = m.group(1)
             # remove json escape sequences :scraper_moment:
-            title = re.sub(r"\\([\\\"])", "\g<1>", m.group(2))  
+            title = re.sub(r"\\([\\\"])", "\g<1>", m.group(2))
             result.append((f"https://www.youtube.com/watch?v={vid}", title))
             if i == amount:
                 break
@@ -88,7 +88,11 @@ class Youtube:
             await reply(embed=e)
             return
 
-        meta_title = f"{info['artist']} - {info['track']}" if ('artist' in info and 'track' in info) else title
+        meta_title = (
+            f"{info['artist']} - {info['track']}"
+            if ("artist" in info and "track" in info)
+            else title
+        )
 
         e.description = title
         e.set_thumbnail(url=thumb)
