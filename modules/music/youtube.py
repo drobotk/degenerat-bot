@@ -8,6 +8,11 @@ from os import mkdir
 from .queue import MusicQueue, MusicQueueEntry
 import re
 
+def sub_before(a: str, b: str, c: str = None) -> str:
+    idx = a.find(b)
+    if idx < 0:
+        return c or a
+    return a[:idx]
 
 class Youtube:
     bot: Bot
@@ -91,7 +96,7 @@ class Youtube:
         meta_title = (
             f"{info['artist']} - {info['track']}"
             if ("artist" in info and "track" in info)
-            else title
+            else sub_before(sub_before(title, " ["), " (")
         )
 
         e.description = title
