@@ -1,18 +1,18 @@
 from discord import AudioSource, Message, VoiceChannel, TextChannel, VoiceClient
-from typing import Callable, Any
+from typing import Callable, Any, Optional
 
 
 class MusicQueueEntry:
     def __init__(
         self,
         title: str,
-        meta_title: str,
+        alt_titles: Optional[list[str]],
         audio_source: AudioSource,
         message: Message,
         after: Callable[[Exception], Any] = None,
     ):
         self.title = title
-        self.meta_title = meta_title
+        self._titles = alt_titles
         self.audio_source = audio_source
         self.message = message
         self.after = after
@@ -32,8 +32,10 @@ class MusicQueue:
 
         self.vc: VoiceClient = None
 
-        self._entries = []
+        self._entries: list[MusicQueueEntry] = []
         self._cleared = True
+
+        self.latest_track: str = ""
 
     def add_entry(self, entry: MusicQueueEntry):
         self._cleared = False
@@ -59,7 +61,13 @@ class MusicQueue:
             entry.cleanup()
 
     def get_next(self) -> MusicQueueEntry:
-        return self._entries.pop(0) if len(self._entries) > 0 else None
+        if not self._entries:
+            return
+
+        entry = self._entries.pop(0)
+        self.latest_track = entry._titles
+
+        return entry
 
     def clear(self):
         self._cleared = True

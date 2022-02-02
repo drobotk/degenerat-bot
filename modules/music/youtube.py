@@ -8,11 +8,13 @@ from os import mkdir
 from .queue import MusicQueue, MusicQueueEntry
 import re
 
+
 def sub_before(a: str, b: str, c: str = None) -> str:
     idx = a.find(b)
     if idx < 0:
         return c or a
     return a[:idx]
+
 
 class Youtube:
     bot: Bot
@@ -70,6 +72,9 @@ class Youtube:
 
         return self.extract_search_results(text, amount)
 
+    def clean_title(self, t: str) -> str:
+        return sub_before(sub_before(t, " ["), " (")
+
     async def queue_youtube(
         self, ctx: Union[SlashContext, MenuContext], queue: MusicQueue, q: str
     ):
@@ -82,9 +87,9 @@ class Youtube:
             info = await self.bot.loop.run_in_executor(
                 None, lambda: self.ydl.extract_info(q, download=False)
             )
-            title = info["title"]
-            filesize = info["filesize"]
-            thumb = info["thumbnail"]
+            title: str = info["title"]
+            filesize: str = info["filesize"]
+            thumb: str = info["thumbnail"]
 
         except Exception as err:
             e = Embed(
@@ -93,11 +98,19 @@ class Youtube:
             await reply(embed=e)
             return
 
-        meta_title = (
-            f"{info['artist']} - {info['track']}"
-            if ("artist" in info and "track" in info)
-            else sub_before(sub_before(title, " ["), " (")
-        )
+        alt_titles = []
+        if "artist" in info and "track" in info:
+            artist: str = info["artist"]
+            track: str = info["track"]
+            alt_titles.append(f"{artist} - {track}")
+            if "|" in artist:
+                for sub in artist.split("|"):
+                    alt_titles.append(f"{sub} - {track}")
+
+            alt_titles.append(track)  # last resort
+
+        alt_titles.append(title)
+        alt_titles = list(dict.fromkeys([self.clean_title(t) for t in alt_titles]))
 
         e.description = title
         e.set_thumbnail(url=thumb)
@@ -132,5 +145,5 @@ class Youtube:
         e.title = "Odtwarzanie" if queue.empty else "Dodano do kolejki"
         await ctx.message.edit(embed=e)
 
-        entry = MusicQueueEntry(title, meta_title, audio, ctx.message)
+        entry = MusicQueueEntry(title, alt_titles, audio, ctx.message)
         queue.add_entry(entry)

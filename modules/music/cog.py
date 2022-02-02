@@ -23,14 +23,9 @@ class Music(Cog, Youtube, Genius):
 
         self.limit_mb = 100
 
-        self.last_track: str = ""
-
         Youtube.__init__(self)
 
-    @Cog.listener()
-    async def on_ready(self):
-        if not self.update.is_running():
-            self.update.start()
+        self.update.start()
 
     def cog_unload(self):
         self.update.cancel()
@@ -106,7 +101,7 @@ class Music(Cog, Youtube, Genius):
 
             msg = await ctx.send(embed=e)
 
-            entry = MusicQueueEntry(q, "", audio, msg)
+            entry = MusicQueueEntry(q, None, audio, msg)
             queue.add_entry(entry)
 
         else:  # Search query
@@ -164,8 +159,10 @@ class Music(Cog, Youtube, Genius):
         else:
             await ctx.send("**Błąd: Nie wykryto pasującej treści**", hidden=True)
 
-    @loop(seconds=3.0)
+    @loop(seconds=2.0)
     async def update(self):
+        await self.bot.wait_until_ready()
+
         for guild in self.bot.guilds:
             queue = self.queues.get(guild.id)
             if queue is None or queue.cleared or queue.num_entries <= 0:
@@ -193,7 +190,6 @@ class Music(Cog, Youtube, Genius):
             if next is None:  # is this possible?
                 continue
 
-            self.last_track = next.meta_title
             queue.vc.play(next.audio_source, after=next.after)
 
             msg = next.message
@@ -366,21 +362,30 @@ class Music(Cog, Youtube, Genius):
         ],
     )
     async def _lyrics(self, ctx: SlashContext, q: str = None):
-        if not q:
-            q = self.last_track
+        if q:
+            tries = [q]
+        else:
+            queue = self.queues.get(ctx.guild.id)
+            if queue:
+                tries = queue.latest_track
 
-        if not q:
+        if not any(tries):
             await ctx.send("**Brak ostatnio odtwarzanego utworu**", hidden=True)
             return
 
         await ctx.defer()
 
-        resolved, lyrics = await self.get_genius_lyrics(q)
+        for q in tries:
+            self.log.info(f'Fetching lyrics for "{q}"')
+            resolved, lyrics = await self.get_genius_lyrics(q)
+            if lyrics:
+                break
+
         if not lyrics:
             await ctx.send("**Tekst piosenki niedostępny**")
             return
 
-        await ctx.send(f"**Tekst dla** `{resolved}`")  # empty response
+        await ctx.send(f"**Tekst dla** `{resolved}`")
 
         # pagination for discord 2000 character limit
         pages = [lyrics[i : i + 2000] for i in range(0, len(lyrics), 2000)]
