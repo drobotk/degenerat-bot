@@ -1,32 +1,22 @@
-from discord import File
-from discord.ext.commands import Bot, Cog
-from discord_slash import cog_ext
-from discord_slash.model import ContextMenuType
-from discord_slash.context import SlashContext, MenuContext
-from discord_slash.utils.manage_commands import create_option
-from typing import Union
-from xml.dom.minidom import parseString
-from io import BytesIO
+import discord
+from discord.ext import commands
+from discord import app_commands
+
+import io
+from bs4 import BeautifulSoup
 
 
-class Img(Cog):
-    def __init__(self, bot: Bot):
+class Img(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     def make_safe_filename(self, s):
         return "".join((c if c.isalnum() or c == "." else "_") for c in s)
 
-    @cog_ext.cog_slash(
-        name="img",
-        description="Wyszukuje hujowo małe obrazki",
-        options=[
-            create_option(
-                name="q", description="Search query", option_type=3, required=True
-            )
-        ],
-    )
-    async def _img(self, ctx: Union[SlashContext, MenuContext], q: str):
-        await ctx.defer()
+    @app_commands.command(description="Wyszukuje hujowo małe obrazki")
+    @app_commands.describe(q="Wyszukiwana fraza")
+    async def img(self, interaction: discord.Interaction, q: str):
+        await interaction.response.defer()
 
         try:
             async with self.bot.http._HTTPClient__session.get(
@@ -35,43 +25,50 @@ class Img(Cog):
                 headers={"User-Agent": "degenerat-bot/2137"},
             ) as r:
                 if not r.ok:
-                    raise Exception(f"{ r.url } got { r.status }")
+                    raise Exception(f"**Error:** google search status code {r.status}")
 
                 text = await r.text()
 
-            doc = parseString(text)
+            soup = BeautifulSoup(text, "lxml")
 
-            img = [x.getAttribute("src") for x in doc.getElementsByTagName("img")]
-            img = img[1:4]
+            img = [x["src"] for x in soup.select("img")[1:4]]
 
             files = []
 
-            for k, v in enumerate(img):
-                async with self.bot.http._HTTPClient__session.get(v) as r:
+            for i, url in enumerate(img):
+                async with self.bot.http._HTTPClient__session.get(url) as r:
                     if r.ok:
                         files.append(
-                            File(
-                                BytesIO(await r.read()),
-                                f"{ self.make_safe_filename( q ) }{ k }.jpg",
+                            discord.File(
+                                io.BytesIO(await r.read()),
+                                f"{self.make_safe_filename(q)}{i}.jpg",
                             )
                         )
 
             if not files:
-                await ctx.send(f"**Brak wyników wyszukiwania dla:** `{ q }`")
+                await interaction.followup.send(
+                    f"**Brak wyników wyszukiwania dla:** `{q}`"
+                )
                 return
 
-            await ctx.send(files=files)
+            await interaction.followup.send(files=files)
 
         except Exception as e:
-            await ctx.send(f"**Coś poszło nie tak:** { str( e ) }")
+            await interaction.followup.send(f"**Coś poszło nie tak:** {e}")
 
-    @cog_ext.cog_context_menu(name="Image Search", target=ContextMenuType.MESSAGE)
-    async def _img_context(self, ctx: MenuContext):
-        if ctx.target_message.content:
-            await self._img.func(self, ctx, ctx.target_message.content)
-        else:
-            await ctx.send("**Błąd: Wiadomość bez treści**", hidden=True)
+    # TODO: uncomment once context commands in cogs get fixed
+    #
+    # @app_commands.context_menu(name="Image Search")
+    # async def img_context(
+    #     self, interaction: discord.Interaction, message: discord.Message
+    # ):
+    #     if message.content:
+    #         await self.img.callback(self, interaction, message.content)
+    #     else:
+    #         await interaction.response.send_message(
+    #             "**Błąd: Wiadomość bez treści**", ephemeral=True
+    #         )
 
 
-def setup(bot: Bot):
+def setup(bot: commands.Bot):
     bot.add_cog(Img(bot))

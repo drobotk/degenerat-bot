@@ -1,8 +1,8 @@
-from discord.ext.commands import Bot, Cog, command, Context
+from discord.ext import commands
 
 
-class React(Cog):
-    def __init__(self, bot: Bot):
+class React(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
         self.l_to_e = {
@@ -110,9 +110,9 @@ class React(Cog):
 
         return out
 
-    @command(name="react")
-    async def _react(
-        self, ctx: Context, *, text: str
+    @commands.command()
+    async def react(
+        self, ctx: commands.Context, *, text: str
     ):  # good luck using slash commands
         if not ctx.message.reference:
             return
@@ -131,5 +131,5 @@ class React(Cog):
             await target.add_reaction(x)
 
 
-def setup(bot: Bot):
+def setup(bot: commands.Bot):
     bot.add_cog(React(bot))

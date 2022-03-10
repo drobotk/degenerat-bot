@@ -1,64 +1,41 @@
-from discord.ext.commands import Bot, Cog
-from discord_slash import cog_ext
-from discord_slash.model import ContextMenuType, AutocompleteOptionData
-from discord_slash.context import SlashContext, MenuContext, AutocompleteContext
-from discord_slash.utils.manage_commands import create_option
-from discord_slash.utils.manage_commands import create_choice
-from typing import Union
-from unicodedata import normalize
-from pyfiglet import Figlet as Fig
+import discord
+from discord.ext import commands
+from discord import app_commands
+
+import unicodedata
+import pyfiglet
 
 
-class Figlet(Cog):
-    def __init__(self, bot: Bot):
+class Figlet(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.figlet = Fig()
+        self.fig = pyfiglet.Figlet()
 
-        self.autocomplete = [
-            "Bartek to huj",
-            "Bartek to gej",
-        ]
-
-    @cog_ext.cog_slash(
-        name="figlet",
-        description="FIGlet bruh",
-        options=[
-            create_option(
-                name="text",
-                description="Tekst do wyfigletowania",
-                option_type=3,
-                required=True,
-                autocomplete=True,
-            )
-        ],
-    )
-    async def _figlet(self, ctx: Union[SlashContext, MenuContext], text: str):
-        txt = normalize("NFKD", text).encode("utf-8", "ignore").decode("utf-8")
-        msg = self.figlet.renderText(txt).replace("`", "'")
+    @app_commands.command(description="FIGlet bruh")
+    @app_commands.describe(text="Tekst do wyfigletowania")
+    async def figlet(self, interaction: discord.Interaction, text: str):
+        txt = (
+            unicodedata.normalize("NFKD", text)
+            .encode("utf-8", "ignore")
+            .decode("utf-8")
+        )
+        msg = self.fig.renderText(txt).replace("`", "'")
         msg = "```\n" + msg[:1992] + "\n```"
-        await ctx.send(msg)
+        await interaction.response.send_message(msg)
 
-    @cog_ext.cog_context_menu(name="Figlet", target=ContextMenuType.MESSAGE)
-    async def _figlet_context(self, ctx: MenuContext):
-        if ctx.target_message.content:
-            await self._figlet.func(self, ctx, ctx.target_message.content)
-        else:
-            await ctx.send("**Błąd: Wiadomość bez treści**", hidden=True)
-
-    @cog_ext.cog_autocomplete(name="figlet")
-    async def _figlet_autocomplete(
-        self, ctx: AutocompleteContext, options: dict[str, AutocompleteOptionData]
-    ):
-        choices = []
-
-        text = options["text"].value
-        if text:
-            for a in self.autocomplete:
-                if a.lower().startswith(text.lower()):
-                    choices.append(create_choice(name=a, value=a))
-
-        await ctx.send(choices)
+    # TODO: uncomment once context commands in cogs get fixed
+    #
+    # @app_commands.context_menu(name="Figlet")
+    # async def figlet_context(
+    #     self, interaction: discord.Interaction, message: discord.Message
+    # ):
+    #     if message.content:
+    #         await self.figlet.callback(self, interaction, message.content)
+    #     else:
+    #         await interaction.response.send_message(
+    #             "**Błąd: Wiadomość bez treści**", ephemeral=True
+    #         )
 
 
-def setup(bot: Bot):
+def setup(bot: commands.Bot):
     bot.add_cog(Figlet(bot))
