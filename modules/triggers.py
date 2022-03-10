@@ -1,10 +1,11 @@
-from discord import Message, AllowedMentions
-from discord.ext.commands import Bot, Cog
+import discord
+from discord.ext import commands
+
 import re
 
 
-class Triggers(Cog):
-    def __init__(self, bot: Bot):
+class Triggers(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
         self.triggers: dict[re.Pattern, str] = {}
@@ -81,8 +82,8 @@ class Triggers(Cog):
 
         return self.spellcheck(input)
 
-    @Cog.listener()
-    async def on_message(self, message: Message):
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
         if message.author.bot or not message.content:
             return
 
@@ -93,8 +94,8 @@ class Triggers(Cog):
         if not res:
             return
 
-        await message.reply(res, allowed_mentions=AllowedMentions(replied_user=False))
+        await message.reply(res, mention_author=False)
 
 
-def setup(bot: Bot):
+def setup(bot: commands.Bot):
     bot.add_cog(Triggers(bot))

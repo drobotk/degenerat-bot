@@ -1,27 +1,29 @@
-from discord import File
-from discord.ext.commands import Bot, Cog
-from discord_slash import cog_ext
-from discord_slash.context import SlashContext
-from io import BytesIO
+import discord
+from discord.ext import commands
+from discord import app_commands
+
+import io
 
 
-class Ryj(Cog):
-    def __init__(self, bot: Bot):
+class Ryj(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @cog_ext.cog_slash(name="ryj", description="Wysyła losowy ryj")
-    async def _ryj(self, ctx: SlashContext):
-        await ctx.defer()
+    @app_commands.command(description="Wysyła losowy ryj")
+    async def ryj(self, interaction: discord.Interaction):
+        await interaction.response.defer()
 
         async with self.bot.http._HTTPClient__session.get(
             "https://thispersondoesnotexist.com/image"
         ) as r:
             if r.ok:
-                await ctx.send(file=File(BytesIO(await r.read()), "ryj.jpg"))
+                await interaction.followup.send(
+                    file=discord.File(io.BytesIO(await r.read()), "ryj.jpg")
+                )
 
             else:
-                await ctx.send("**Coś poszło nie tak**")
+                await interaction.followup.send("**Coś poszło nie tak**")
 
 
-def setup(bot: Bot):
+def setup(bot: commands.Bot):
     bot.add_cog(Ryj(bot))

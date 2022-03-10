@@ -1,11 +1,11 @@
 async_property
 aiohttp
-discord.py[voice]==1.7.3
-git+https://github.com/drobotk/discord-interactions
+PyNaCl
+git+https://github.com/Rapptz/discord.py
 git+https://github.com/yt-dlp/yt-dlp
 pyfiglet
 asyncssh
 cowsay
-jishaku
-beautifulsoup4==4.10.0
-lxml==4.7.1
+git+https://github.com/Gorialis/jishaku
+beautifulsoup4
+lxml

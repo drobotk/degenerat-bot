@@ -1,22 +1,25 @@
-from discord.ext.commands import Bot, Cog
-from discord_slash import cog_ext
-from discord_slash.context import SlashContext
-from cowsay import get_output_string
+import discord
+from discord.ext import commands
+from discord import app_commands
+
+import cowsay
 
 
-class Cow(Cog):
-    def __init__(self, bot: Bot):
+class Cow(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @cog_ext.cog_slash(name="cow", description="Mądrości krowy")
-    async def _cow(self, ctx: SlashContext):
-        await ctx.defer()
+    @app_commands.command(description="Mądrości krowy")
+    async def cow(self, interaction: discord.Interaction):
+        await interaction.response.defer()
 
         async with self.bot.http._HTTPClient__session.get(
             "https://evilinsult.com/generate_insult.php?lang=en&type=json"
         ) as r:
             if not r.ok:
-                await ctx.send(f"**Error:** insult status code { r.status }")
+                await interaction.followup.send(
+                    f"**Error:** insult status code {r.status}"
+                )
                 return
 
             j = await r.json()
@@ -29,7 +32,9 @@ class Cow(Cog):
             "https://translate.googleapis.com/translate_a/single", params=params
         ) as r:
             if not r.ok:
-                await ctx.send(f"**Error:** translate status code { r.status }")
+                await interaction.followup.send(
+                    f"**Error:** translate status code { r.status }"
+                )
                 return
 
             j = await r.json()
@@ -38,10 +43,10 @@ class Cow(Cog):
             [a[0] for a in j[0]]
         )  # jebać czytelność, zjebany internal endpoint
 
-        msg = get_output_string("cow", polish).replace("`", "'")
+        msg = cowsay.get_output_string("cow", polish).replace("`", "'")
         msg = "```\n" + msg[:1992] + "\n```"
-        await ctx.send(msg)
+        await interaction.followup.send(msg)
 
 
-def setup(bot: Bot):
+def setup(bot: commands.Bot):
     bot.add_cog(Cow(bot))

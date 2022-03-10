@@ -1,32 +1,32 @@
 import discord
-from discord.ext.commands import Bot, Cog
-from discord_slash import cog_ext
-from discord_slash.context import SlashContext
-from discord_slash.model import CommandObject
-from discord_slash.utils.manage_components import create_button, create_actionrow
-from discord_slash.model import ButtonStyle
+from discord.ext import commands
+from discord import app_commands
+
 import sys
 
 
-class Info(Cog):
-    def __init__(self, bot: Bot):
+class Info(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @cog_ext.cog_slash(name="info", description="Info o bocie")
-    async def _info(self, ctx: SlashContext):
-        e = discord.Embed(color=ctx.me.color)
+    @app_commands.command(description="Info o bocie")
+    async def info(self, interaction: discord.Interaction):
+        e = discord.Embed(colour=interaction.guild.me.colour)
 
-        icon = str(ctx.me.avatar_url)
-        icon = icon[: icon.find("?")] + "?size=32"
-        e.set_author(name=str(ctx.me), icon_url=icon)
+        avatar = (
+            interaction.guild.me.avatar.url
+            if interaction.guild.me.avatar
+            else discord.embeds.EmptyEmbed
+        )
+        e.set_author(name=str(self.bot.user), icon_url=avatar)
 
         e.add_field(name="Stworzony przez", value="RoboT#2675", inline=False)
         e.add_field(name="Serwery", value=str(len(self.bot.guilds)))
 
         cmds = [
-            a
-            for a in self.bot.slash.commands.values()
-            if isinstance(a, CommandObject) and a._type == 1
+            c
+            for c in self.bot.tree._global_commands.values()
+            if isinstance(c, app_commands.Command)
         ]
         e.add_field(name="Komendy", value=str(len(cmds)))
 
@@ -34,15 +34,13 @@ class Info(Cog):
         e.add_field(name="Python", value=sys.version, inline=False)
         e.add_field(name="discord.py", value=discord.__version__, inline=False)
 
-        link = f"https://discord.com/api/oauth2/authorize?client_id={ ctx.me.id }&permissions=412857396288&scope=bot%20applications.commands"
-        components = [
-            create_actionrow(
-                create_button(style=ButtonStyle.URL, label="Dodaj do serwera", url=link)
-            )
-        ]
+        invite_url = f"https://discord.com/api/oauth2/authorize?client_id={self.bot.user.id}&permissions=412857396288&scope=bot%20applications.commands"
 
-        await ctx.send(embed=e, components=components)
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Dodaj do serwera", url=invite_url))
+
+        await interaction.response.send_message(embed=e, view=view)
 
 
-def setup(bot: Bot):
+def setup(bot: commands.Bot):
     bot.add_cog(Info(bot))
