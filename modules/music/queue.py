@@ -9,7 +9,7 @@ class MusicQueueEntry:
         alt_titles: Optional[list[str]],
         audio_source: AudioSource,
         message: Message,
-        after: Callable[[Exception], Any] = None,
+        after: Optional[Callable[[Exception], Any]] = None,
     ):
         self.title = title
         self._titles = alt_titles

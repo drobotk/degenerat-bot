@@ -1,12 +1,13 @@
-from discord import Embed, Colour, FFmpegOpusAudio
-from discord.ext.commands import Bot
-from discord_slash import SlashContext, MenuContext
-from typing import Union
-from yt_dlp import YoutubeDL
-from logging import getLogger
-from os import mkdir
-from .queue import MusicQueue, MusicQueueEntry
+import discord
+from discord.ext import commands
+
+import os
 import re
+import logging
+from yt_dlp import YoutubeDL
+from aiohttp import ClientSession
+
+from .queue import MusicQueue, MusicQueueEntry
 
 
 def sub_before(a: str, b: str, c: str = None) -> str:
@@ -17,13 +18,13 @@ def sub_before(a: str, b: str, c: str = None) -> str:
 
 
 class Youtube:
-    bot: Bot
+    bot: commands.Bot
 
     def __init__(self):
         params = {
             "no_color": True,
             "format": self.format_selector,
-            "logger": getLogger(__name__),
+            "logger": logging.getLogger(__name__),
         }
         self.ydl = YoutubeDL(params)
 
@@ -35,7 +36,7 @@ class Youtube:
             r'"videoRenderer":{"videoId":"(.{11})"(?:.+?)"title":{"runs":\[{"text":"(.+?)"}\],"accessibility"'
         )
 
-    def format_selector(self, ctx: dict) -> list:
+    def format_selector(self, ctx: dict) -> list[dict]:
         formats = ctx["formats"]
         formats = [a for a in formats if a["acodec"] == "opus"]
         if len(formats) <= 1:
@@ -62,7 +63,8 @@ class Youtube:
         return result
 
     async def youtube_search(self, q: str, amount: int) -> list[tuple[str, str]]:
-        async with self.bot.http._HTTPClient__session.get(
+        session: ClientSession = self.bot.http._HTTPClient__session
+        async with session.get(
             "https://www.youtube.com/results", params={"search_query": q}
         ) as r:
             if not r.ok:
@@ -76,11 +78,12 @@ class Youtube:
         return sub_before(sub_before(t, " ["), " (")
 
     async def queue_youtube(
-        self, ctx: Union[SlashContext, MenuContext], queue: MusicQueue, q: str
+        self, interaction: discord.Interaction, queue: MusicQueue, q: str
     ):
-        reply = ctx.message.edit if ctx.message else ctx.send
+        msg = await interaction.original_message()
+        reply = interaction.edit_original_message if msg else interaction.followup.send
 
-        e = Embed()
+        e = discord.Embed()
         e.set_footer(text=q)
 
         try:
@@ -92,8 +95,10 @@ class Youtube:
             thumb: str = info["thumbnail"]
 
         except Exception as err:
-            e = Embed(
-                title="**Wystąpił błąd**", description=str(err), color=Colour.red()
+            e = discord.Embed(
+                title="**Wystąpił błąd**",
+                description=str(err),
+                color=discord.Colour.red(),
             )
             await reply(embed=e)
             return
@@ -117,33 +122,33 @@ class Youtube:
 
         if filesize > self.limit_mb * 1_000_000:
             e.title = f"**Rozmiar pliku przekracza rozsądny limit {self.limit_mb}MB**"
-            e.color = Colour.red()
+            e.color = discord.Colour.red()
             await reply(embed=e)
             return
 
         e.title = "Pobierańsko..."
-        e.color = ctx.me.color
+        e.color = interaction.guild.me.color
         await reply(embed=e)
 
         try:
-            mkdir("./yt")
+            os.mkdir("./yt")
         except FileExistsError:
             pass
 
-        filename = f"./yt/{ self.ydl.prepare_filename( info ) }"
+        filename = f"./yt/{self.ydl.prepare_filename(info)}"
         success, _ = await self.bot.loop.run_in_executor(
             None, lambda: self.ydl.dl(filename, info)
         )
         if not success:
-            e.title = "**Wystąpił błąd podczas pobierania pliku**"
-            e.color = Colour.red()
-            await ctx.message.edit(embed=e)
+            e.title = "**Wystąpił błąd podczas pobierania utworu**"
+            e.color = discord.Colour.red()
+            await interaction.edit_original_message(embed=e)
             return
 
-        audio = await FFmpegOpusAudio.from_probe(filename)
+        audio = await discord.FFmpegOpusAudio.from_probe(filename)
 
         e.title = "Odtwarzanie" if queue.empty else "Dodano do kolejki"
-        await ctx.message.edit(embed=e)
+        await interaction.edit_original_message(embed=e)
 
-        entry = MusicQueueEntry(title, alt_titles, audio, ctx.message)
+        entry = MusicQueueEntry(title, alt_titles, audio, await interaction.original_message())
         queue.add_entry(entry)

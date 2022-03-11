@@ -1,12 +1,14 @@
-from discord.ext.commands import Bot
+from discord.ext import commands
+from aiohttp import ClientSession
 from bs4 import BeautifulSoup
 
 
 class Genius:
-    bot: Bot
+    bot: commands.Bot
 
     async def get_genius_lyrics(self, q) -> tuple[str, str]:
-        async with self.bot.http._HTTPClient__session.get(
+        session: ClientSession = self.bot.http._HTTPClient__session
+        async with session.get(
             "https://genius.com/api/search/song", params={"q": q}
         ) as r:
             if not r.ok:
@@ -23,7 +25,7 @@ class Genius:
 
         title = song["full_title"]
 
-        async with self.bot.http._HTTPClient__session.get(song["url"]) as r:
+        async with session.get(song["url"]) as r:
             if not r.ok:
                 return title, None
 

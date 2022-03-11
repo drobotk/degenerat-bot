@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 
 import cowsay
+from aiohttp import ClientSession
 
 
 class Cow(commands.Cog):
@@ -13,7 +14,8 @@ class Cow(commands.Cog):
     async def cow(self, interaction: discord.Interaction):
         await interaction.response.defer()
 
-        async with self.bot.http._HTTPClient__session.get(
+        session: ClientSession = self.bot.http._HTTPClient__session
+        async with session.get(
             "https://evilinsult.com/generate_insult.php?lang=en&type=json"
         ) as r:
             if not r.ok:
@@ -28,7 +30,7 @@ class Cow(commands.Cog):
 
         params = {"client": "gtx", "dt": "t", "sl": "en", "tl": "pl", "q": english}
 
-        async with self.bot.http._HTTPClient__session.get(
+        async with session.get(
             "https://translate.googleapis.com/translate_a/single", params=params
         ) as r:
             if not r.ok:

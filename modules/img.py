@@ -4,6 +4,7 @@ from discord import app_commands
 
 import io
 from bs4 import BeautifulSoup
+from aiohttp import ClientSession
 
 
 class Img(commands.Cog):
@@ -19,7 +20,8 @@ class Img(commands.Cog):
         await interaction.response.defer()
 
         try:
-            async with self.bot.http._HTTPClient__session.get(
+            session: ClientSession = self.bot.http._HTTPClient__session
+            async with session.get(
                 "https://www.google.com/search",
                 params={"tbm": "isch", "q": q},
                 headers={"User-Agent": "degenerat-bot/2137"},
@@ -36,7 +38,7 @@ class Img(commands.Cog):
             files = []
 
             for i, url in enumerate(img):
-                async with self.bot.http._HTTPClient__session.get(url) as r:
+                async with session.get(url) as r:
                     if r.ok:
                         files.append(
                             discord.File(
@@ -56,19 +58,20 @@ class Img(commands.Cog):
         except Exception as e:
             await interaction.followup.send(f"**Coś poszło nie tak:** {e}")
 
-    # TODO: uncomment once context commands in cogs get fixed
-    #
-    # @app_commands.context_menu(name="Image Search")
-    # async def img_context(
-    #     self, interaction: discord.Interaction, message: discord.Message
-    # ):
-    #     if message.content:
-    #         await self.img.callback(self, interaction, message.content)
-    #     else:
-    #         await interaction.response.send_message(
-    #             "**Błąd: Wiadomość bez treści**", ephemeral=True
-    #         )
-
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Img(bot))
+    cog = Img(bot)
+
+    # ugly, i hate how these can't be in cogs
+    @app_commands.context_menu(name="Image Search")
+    async def img_context(interaction: discord.Interaction, message: discord.Message):
+        if message.content:
+            await cog.img.callback(cog, interaction, message.content)
+        else:
+            await interaction.response.send_message(
+                "**Błąd: Wiadomość bez treści**", ephemeral=True
+            )
+
+    bot.tree.add_command(img_context)
+
+    bot.add_cog(cog)

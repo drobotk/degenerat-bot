@@ -22,7 +22,7 @@ class Status(commands.Cog):
 
         e.add_field(
             name="Opóźnienie Websocketa",
-            value=f"{round(self.bot.latency * 1000) } ms",
+            value=f"{round(self.bot.latency * 1000)} ms",
             inline=True,
         )
         e.add_field(

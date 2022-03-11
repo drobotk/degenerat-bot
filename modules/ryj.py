@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 
 import io
+from aiohttp import ClientSession
 
 
 class Ryj(commands.Cog):
@@ -13,9 +14,8 @@ class Ryj(commands.Cog):
     async def ryj(self, interaction: discord.Interaction):
         await interaction.response.defer()
 
-        async with self.bot.http._HTTPClient__session.get(
-            "https://thispersondoesnotexist.com/image"
-        ) as r:
+        session: ClientSession = self.bot.http._HTTPClient__session
+        async with session.get("https://thispersondoesnotexist.com/image") as r:
             if r.ok:
                 await interaction.followup.send(
                     file=discord.File(io.BytesIO(await r.read()), "ryj.jpg")

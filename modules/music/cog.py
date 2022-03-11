@@ -1,24 +1,19 @@
-from discord import Embed, Colour, VoiceChannel, VoiceClient, Member
-from discord import FFmpegPCMAudio, VoiceState
-from discord.ext.commands import Bot, Cog
-from discord.ext.tasks import loop
-from discord_slash import cog_ext
-from discord_slash.model import ContextMenuType, AutocompleteOptionData
-from discord_slash.context import SlashContext, MenuContext, AutocompleteContext
-from discord_slash.utils.manage_commands import create_option, create_choice
-from typing import Union
+import discord
+from discord.ext import commands, tasks
+from discord import app_commands
+
+import logging
 from urllib.parse import urlparse
-from logging import getLogger
 
 from .genius import Genius
 from .youtube import Youtube
 from .queue import MusicQueue, MusicQueueEntry
 
 
-class Music(Cog, Youtube, Genius):
-    def __init__(self, bot: Bot):
+class Music(commands.Cog, Youtube, Genius):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.log = getLogger(__name__)
+        self.log = logging.getLogger(__name__)
         self.queues: dict[int, MusicQueue] = {}
 
         self.limit_mb = 100
@@ -34,8 +29,8 @@ class Music(Cog, Youtube, Genius):
             q.clear()
 
     async def get_voice_client_for_channel(
-        self, ch: VoiceChannel, stop_playing: bool = False
-    ) -> VoiceClient:
+        self, ch: discord.VoiceChannel, stop_playing: bool = False
+    ) -> discord.VoiceClient:
         vc = ch.guild.voice_client
 
         if vc:
@@ -58,108 +53,104 @@ class Music(Cog, Youtube, Genius):
         except:
             return False
 
-    @cog_ext.cog_slash(
-        name="play",
-        description="Odtwarza muzykę w twoim kanale głosowym",
-        options=[
-            create_option(
-                name="q",
-                description="Search query/URL",
-                option_type=3,
-                required=True,
-                autocomplete=True,
-            )
-        ],
-    )
-    async def _play(self, ctx: Union[SlashContext, MenuContext], q: str):
-        ch = ctx.author.voice.channel if ctx.author.voice is not None else None
+    @app_commands.command(description="Odtwarza muzykę w twoim kanale głosowym")
+    @app_commands.describe(q="Wyszukiwana fraza/URL")
+    async def play(self, interaction: discord.Interaction, q: str):
+        ch = (
+            interaction.user.voice.channel
+            if interaction.user.voice is not None
+            else None
+        )
 
         if ch is None:
-            await ctx.send("**Musisz być połączony z kanałem głosowym**", hidden=True)
+            await interaction.response.send_message(
+                "**Musisz być połączony z kanałem głosowym**", ephemeral=True
+            )
             return
 
-        await ctx.defer()
+        await interaction.response.defer()
 
-        queue = self.queues.get(ctx.guild.id, None)
+        queue = self.queues.get(interaction.guild.id)
 
         if queue is None:
-            queue = MusicQueue(ch, ctx.channel)
-            self.queues[ctx.guild.id] = queue
+            queue = MusicQueue(ch, interaction.channel)
+            self.queues[interaction.guild.id] = queue
 
-        elif queue.message_channel != ctx.channel or queue.voice_channel != ch:
-            queue.message_channel = ctx.channel
+        elif queue.message_channel != interaction.channel or queue.voice_channel != ch:
+            queue.message_channel = interaction.channel
             queue.voice_channel = ch
 
         url = self.extract_yt_url(q)
         if url:
-            await self.queue_youtube(ctx, queue, url)
+            await self.queue_youtube(interaction, queue, url)
 
         elif self.is_url(q):
-            audio = FFmpegPCMAudio(q)
-            e = Embed(description=q, color=ctx.me.color)
+            audio = discord.FFmpegPCMAudio(q)
+            e = discord.Embed(description=q, color=interaction.guild.me.color)
             e.title = "Odtwarzanie" if queue.empty else "Dodano do kolejki"
 
-            msg = await ctx.send(embed=e)
+            msg = await interaction.followup.send(embed=e, wait=True)
 
             entry = MusicQueueEntry(q, None, audio, msg)
             queue.add_entry(entry)
 
         else:  # Search query
-            e = Embed(description=f"Wyszukiwanie `{ q }`...", color=ctx.me.color)
-            await ctx.send(embed=e)
+            e = discord.Embed(
+                description=f"Wyszukiwanie `{ q }`...", color=interaction.guild.me.color
+            )
+            await interaction.followup.send(embed=e)
 
             results = await self.youtube_search(q, 1)
             if not results:
-                e = Embed(
+                e = discord.Embed(
                     description=f"Brak wyników wyszukiwania dla: `{ q }`",
-                    color=Colour.red(),
+                    color=discord.Colour.red(),
                 )
-                await ctx.message.edit(embed=e)
+                await interaction.edit_original_message(embed=e)
                 return
 
-            await self.queue_youtube(ctx, queue, results[0][0])
+            await self.queue_youtube(interaction, queue, results[0][0])
 
-    @cog_ext.cog_autocomplete(name="play")
-    async def _play_autocomplete(
-        self, ctx: AutocompleteContext, options: dict[str, AutocompleteOptionData]
-    ):
-        q = options["q"].value
-        if not q:
-            await ctx.send([])
-            return
+    # async def _play_autocomplete(
+    #     self, ctx: AutocompleteContext, options: dict[str, AutocompleteOptionData]
+    # ):
+    #     q = options["q"].value
+    #     if not q:
+    #         await ctx.send([])
+    #         return
 
-        if q.startswith("http://") or q.startswith("https://"):
-            await ctx.send([create_choice(name=q[:100], value=q)])
-            return
+    #     if q.startswith("http://") or q.startswith("https://"):
+    #         await ctx.send([create_choice(name=q[:100], value=q)])
+    #         return
 
-        results = await self.youtube_search(q, 5)
-        if not results:
-            await ctx.send([])
-            return
+    #     results = await self.youtube_search(q, 5)
+    #     if not results:
+    #         await ctx.send([])
+    #         return
 
-        await ctx.send([create_choice(name=r[1][:100], value=r[0]) for r in results])
+    #     await ctx.send([create_choice(name=r[1][:100], value=r[0]) for r in results])
 
-    @cog_ext.cog_context_menu(name="Dodaj do kolejki", target=ContextMenuType.MESSAGE)
-    async def _play_context(self, ctx: MenuContext):
-        if ctx.target_message.content:
-            url = self.extract_yt_url(ctx.target_message.content)
-            await self._play.func(self, ctx, url or ctx.target_message.content)
+    # @cog_ext.cog_context_menu(name="Dodaj do kolejki", target=ContextMenuType.MESSAGE)
+    # async def _play_context(self, ctx: MenuContext):
+    #     if ctx.target_message.content:
+    #         url = self.extract_yt_url(ctx.target_message.content)
+    #         await self._play.func(self, ctx, url or ctx.target_message.content)
 
-        elif ctx.target_message.embeds:
-            e = ctx.target_message.embeds[0]
-            text = str(e.to_dict())
+    #     elif ctx.target_message.embeds:
+    #         e = ctx.target_message.embeds[0]
+    #         text = str(e.to_dict())
 
-            url = self.extract_yt_url(text)
-            if url:
-                await self._play.func(self, ctx, url)
+    #         url = self.extract_yt_url(text)
+    #         if url:
+    #             await self._play.func(self, ctx, url)
 
-            elif e.description or e.title:
-                await self._play.func(self, ctx, e.description or e.title)
+    #         elif e.description or e.title:
+    #             await self._play.func(self, ctx, e.description or e.title)
 
-        else:
-            await ctx.send("**Błąd: Nie wykryto pasującej treści**", hidden=True)
+    #     else:
+    #         await ctx.send("**Błąd: Nie wykryto pasującej treści**", ephemeral=True)
 
-    @loop(seconds=2.0)
+    @tasks.loop(seconds=2.0)
     async def update(self):
         await self.bot.wait_until_ready()
 
@@ -172,7 +163,7 @@ class Music(Cog, Youtube, Genius):
                     and len(guild.voice_client.channel.members) == 1
                 ):
                     if queue and queue.message_channel:
-                        e = Embed(
+                        e = discord.Embed(
                             description=f"Poszedłem sobie z { guild.voice_client.channel.mention } bo zostałem sam",
                             color=guild.me.color,
                         )
@@ -201,9 +192,12 @@ class Music(Cog, Youtube, Genius):
                 else:
                     await queue.message_channel.send(embed=e)
 
-    @Cog.listener()
+    @commands.Cog.listener()
     async def on_voice_state_update(
-        self, member: Member, before: VoiceState, after: VoiceState
+        self,
+        member: discord.Member,
+        before: discord.VoiceState,
+        after: discord.VoiceState,
     ):
         if member != self.bot.user:
             return
@@ -211,12 +205,12 @@ class Music(Cog, Youtube, Genius):
         if after.channel != before.channel:
             if before.channel is None:  # joined voice channel
                 self.log.info(
-                    f'Joined vc "{ after.channel }" ({ after.channel.guild.name })'
+                    f'Joined vc "{after.channel}" ({after.channel.guild.name})'
                 )
 
             elif after.channel is None:  # left voice channel
                 self.log.info(
-                    f'Left vc "{ before.channel }" ({ before.channel.guild.name })'
+                    f'Left vc "{before.channel}" ({before.channel.guild.name})'
                 )
 
                 queue = self.queues.get(before.channel.guild.id)
@@ -229,92 +223,91 @@ class Music(Cog, Youtube, Genius):
                     queue.voice_channel = after.channel
 
                 self.log.info(
-                    f'Moved to vc "{ after.channel }" ({ after.channel.guild.name })'
+                    f'Moved to vc "{after.channel}" ({after.channel.guild.name})'
                 )
 
         if not after.self_deaf:
             await member.guild.change_voice_state(channel=after.channel, self_deaf=True)
 
-    @cog_ext.cog_slash(
-        name="disconnect", description="Rozłącza bota od kanału głosowego"
-    )
-    async def _disconnect(self, ctx: SlashContext):
-        vc = ctx.guild.voice_client
+    @app_commands.command(description="Rozłącza bota od kanału głosowego")
+    async def disconnect(self, interaction: discord.Interaction):
+        vc = interaction.guild.voice_client
         if not vc:
-            await ctx.send("**Nie połączono**", hidden=True)
+            await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
 
         await vc.disconnect()
-        await ctx.send(":wave:")
+        await interaction.response.send_message(":wave:")
 
-    @cog_ext.cog_slash(name="pause", description="Pauzuje odtwarzanie muzyki")
-    async def _pause(self, ctx: SlashContext):
-        vc = ctx.guild.voice_client
+    @app_commands.command(name="pause", description="Pauzuje odtwarzanie muzyki")
+    async def pause(self, interaction: discord.Interaction):
+        vc = interaction.guild.voice_client
         if not vc:
-            await ctx.send("**Nie połączono**", hidden=True)
+            await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
 
         vc.pause()
-        await ctx.send(":ok_hand:")
+        await interaction.response.send_message(":ok_hand:")
 
-    @cog_ext.cog_slash(name="resume", description="Wznawia odtwarzanie muzyki")
-    async def _resume(self, ctx: SlashContext):
-        vc = ctx.guild.voice_client
+    @app_commands.command(name="resume", description="Wznawia odtwarzanie muzyki")
+    async def resume(self, interaction: discord.Interaction):
+        vc = interaction.guild.voice_client
         if not vc:
-            await ctx.send("**Nie połączono**", hidden=True)
+            await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
 
         vc.resume()
-        await ctx.send(":ok_hand:")
+        await interaction.response.send_message(":ok_hand:")
 
-    @cog_ext.cog_slash(
-        name="stop", description="Zakańcza odtwarzanie muzyki i czyści kolejkę"
-    )
-    async def _stop(self, ctx: SlashContext):
-        vc = ctx.guild.voice_client
+    @app_commands.command(description="Zakańcza odtwarzanie muzyki i czyści kolejkę")
+    async def stop(self, interaction: discord.Interaction):
+        vc = interaction.guild.voice_client
         if not vc:
-            await ctx.send("**Nie połączono**", hidden=True)
+            await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
 
-        queue = self.queues.get(ctx.guild.id)
+        queue = self.queues.get(interaction.guild.id)
         if queue is not None:
             queue.clear()
 
         vc.stop()
-        await ctx.send(":ok_hand:")
+        await interaction.response.send_message(":ok_hand:")
 
-    @cog_ext.cog_slash(name="clear", description="Czyści kolejkę")
-    async def _clear(self, ctx: SlashContext):
-        queue = self.queues.get(ctx.guild.id)
-        if queue is not None:
-            queue.clear()
-
-        await ctx.send(":ok_hand:")
-
-    @cog_ext.cog_slash(
-        name="skip", description="Pomija aktualnie odtwarzany element kolejki"
-    )
-    async def _skip(self, ctx: SlashContext):
-        vc = ctx.guild.voice_client
-        if not vc:
-            await ctx.send("**Nie połączono**", hidden=True)
-            return
-
-        vc.stop()
-        await ctx.send(":ok_hand:")
-
-    @cog_ext.cog_slash(name="queue", description="Wyświetla zawartość kolejki")
-    async def _queue(self, ctx: SlashContext):
-        queue = self.queues.get(ctx.guild.id)
+    @app_commands.command(description="Czyści kolejkę muzyki")
+    async def clear(self, interaction: discord.Interaction):
+        queue = self.queues.get(interaction.guild_id)
         if queue is None:
-            await ctx.send("**Brak kolejki**", hidden=True)
+            await interaction.response.send_message("**Brak kolejki**", ephemeral=True)
+            return
+
+        queue.clear()
+
+        await interaction.response.send_message(":ok_hand:")
+
+    @app_commands.command(description="Pomija aktualnie odtwarzany element kolejki")
+    async def skip(self, interaction: discord.Interaction):
+        vc = interaction.guild.voice_client
+        if not vc:
+            await interaction.response.send_message("**Nie połączono**", ephemeral=True)
+            return
+
+        vc.stop()
+        await interaction.response.send_message(":ok_hand:")
+
+    @app_commands.command(description="Wyświetla zawartość kolejki")
+    async def queue(self, interaction: discord.Interaction):
+        queue = self.queues.get(interaction.guild.id)
+        if queue is None:
+            await interaction.response.send_message("**Brak kolejki**", ephemeral=True)
             return
 
         if queue.num_entries < 1:
-            await ctx.send("**W kolejce pusto jak w głowie Jacka**", hidden=True)
+            await interaction.response.send_message(
+                "**W kolejce pusto jak w głowie Jacka**", ephemeral=True
+            )
             return
 
-        e = Embed(title="Kolejka", color=ctx.me.color)
+        e = discord.Embed(title="Kolejka", color=interaction.guild.me.color)
 
         e.add_field(
             inline=True,
@@ -323,57 +316,49 @@ class Music(Cog, Youtube, Genius):
         )
         e.add_field(inline=True, name="Tytuł", value="\n".join(queue.entries))
 
-        await ctx.send(embed=e)
+        await interaction.response.send_message(embed=e)
 
-    @cog_ext.cog_slash(
-        name="remove",
-        description="Usuwa pozycję z kolejki",
-        options=[
-            create_option(
-                name="pos", description="Element kolejki", option_type=4, required=True
-            )
-        ],
-    )
-    async def _remove(self, ctx: SlashContext, pos: int):
-        queue = self.queues.get(ctx.guild.id)
+    @app_commands.command(description="Usuwa pozycję z kolejki muzyki")
+    @app_commands.describe(pos="Element kolejki")
+    async def remove(self, interaction: discord.Interaction, pos: int):
+        queue = self.queues.get(interaction.guild.id)
         if queue is None:
-            await ctx.send("**Brak kolejki**", hidden=True)
+            await interaction.response.send_message("**Brak kolejki**", ephemeral=True)
             return
 
         if queue.num_entries < 1:
-            await ctx.send("**W kolejce pusto jak w głowie Jacka**", hidden=True)
+            await interaction.response.send_message(
+                "**W kolejce pusto jak w głowie Jacka**", ephemeral=True
+            )
             return
 
         if pos < 1 or pos > queue.num_entries:
-            await ctx.send("**Nieprawidłowy element kolejki**", hidden=True)
+            await interaction.response.send_message(
+                "**Nieprawidłowy element kolejki**", ephemeral=True
+            )
             return
 
         queue.remove(pos - 1)
 
-        await ctx.send(":ok_hand:")
+        await interaction.response.send_message(":ok_hand:")
 
-    @cog_ext.cog_slash(
-        name="lyrics",
-        description="Pobiera tekst piosenki",
-        options=[
-            create_option(
-                name="q", description="Search query", option_type=3, required=False
-            )
-        ],
-    )
-    async def _lyrics(self, ctx: SlashContext, q: str = None):
+    @app_commands.command(description="Pobiera tekst piosenki")
+    @app_commands.describe(q="Wyszukiwana fraza")
+    async def lyrics(self, interaction: discord.Interaction, q: str = None):
         if q:
             tries = [q]
         else:
-            queue = self.queues.get(ctx.guild.id)
+            queue = self.queues.get(interaction.guild.id)
             if queue:
                 tries = queue.latest_track
 
         if not any(tries):
-            await ctx.send("**Brak ostatnio odtwarzanego utworu**", hidden=True)
+            await interaction.response.send_message(
+                "**Brak ostatnio odtwarzanego utworu**", ephemeral=True
+            )
             return
 
-        await ctx.defer()
+        await interaction.response.defer()
 
         for q in tries:
             self.log.info(f'Fetching lyrics for "{q}"')
@@ -382,16 +367,16 @@ class Music(Cog, Youtube, Genius):
                 break
 
         if not lyrics:
-            await ctx.send("**Tekst piosenki niedostępny**")
+            await interaction.followup.send("**Tekst piosenki niedostępny**")
             return
 
-        await ctx.send(f"**Tekst dla** `{resolved}`")
+        await interaction.followup.send(f"**Tekst dla** `{resolved}`")
 
         # pagination for discord 2000 character limit
         pages = [lyrics[i : i + 2000] for i in range(0, len(lyrics), 2000)]
         for p in pages:
-            await ctx.channel.send(p)
+            await interaction.channel.send(p)
 
 
-def setup(bot: Bot):
+def setup(bot: commands.Bot):
     bot.add_cog(Music(bot))

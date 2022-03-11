@@ -23,19 +23,22 @@ class Figlet(commands.Cog):
         msg = "```\n" + msg[:1992] + "\n```"
         await interaction.response.send_message(msg)
 
-    # TODO: uncomment once context commands in cogs get fixed
-    #
-    # @app_commands.context_menu(name="Figlet")
-    # async def figlet_context(
-    #     self, interaction: discord.Interaction, message: discord.Message
-    # ):
-    #     if message.content:
-    #         await self.figlet.callback(self, interaction, message.content)
-    #     else:
-    #         await interaction.response.send_message(
-    #             "**Błąd: Wiadomość bez treści**", ephemeral=True
-    #         )
-
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Figlet(bot))
+    cog = Figlet(bot)
+
+    # ugly, i hate how these can't be in cogs
+    @app_commands.context_menu(name="Figlet")
+    async def figlet_context(
+        interaction: discord.Interaction, message: discord.Message
+    ):
+        if message.content:
+            await cog.figlet.callback(cog, interaction, message.content)
+        else:
+            await interaction.response.send_message(
+                "**Błąd: Wiadomość bez treści**", ephemeral=True
+            )
+
+    bot.tree.add_command(figlet_context)
+
+    bot.add_cog(cog)

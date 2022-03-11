@@ -2,18 +2,18 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
-import asyncssh
 import os
 import logging
-
+import asyncssh
+from aiohttp import ClientSession
 
 class Stoi(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.log = logging.getLogger(__name__)
         self.sshopts = asyncssh.SSHClientConnectionOptions(
-            username="degenerat-stoi",
-            password="japierdole",
+            username=os.getenv("DEBIL_SSH_LOGIN"),
+            password=os.getenv("DEBIL_SSH_PASSWD"),
             known_hosts=None,
             login_timeout=5,
         )
@@ -68,7 +68,8 @@ class Stoi(commands.Cog):
 
         typesToString = {1: "HTTP", 2: "Keyword", 3: "Ping", 4: "Port", 5: "Heartbeat"}
 
-        async with self.bot.http._HTTPClient__session.post(
+        session: ClientSession = self.bot.http._HTTPClient__session
+        async with session.post(
             "https://api.uptimerobot.com/v2/getMonitors",
             data={"api_key": os.getenv("UPTIME_TOKEN"), "format": "json", "logs": "1"},
             headers={"cache-control": "no-cache"},
