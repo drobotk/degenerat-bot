@@ -1,196 +1,114 @@
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from discord import app_commands
 
 import logging
 from urllib.parse import urlparse
 
-from .genius import Genius
+from .queue import MusicQueueAudioSource, MusicQueueVoiceClient
+from .genius import get_genius_lyrics
 from .youtube import Youtube
-from .queue import MusicQueue, MusicQueueEntry
 
 
-class Music(commands.Cog, Youtube, Genius):
+def is_url(x: str) -> bool:
+    try:
+        result = urlparse(x)
+        return all([result.scheme, result.netloc])
+
+    except:
+        return False
+
+
+class Music(commands.Cog, Youtube):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.log = logging.getLogger(__name__)
-        self.queues: dict[int, MusicQueue] = {}
-
-        self.limit_mb = 100
-
         Youtube.__init__(self)
 
-        self.update.start()
+    async def get_client_for_channels(
+        self, voice_channel: discord.VoiceChannel, text_channel: discord.TextChannel
+    ) -> MusicQueueVoiceClient:
+        vc = voice_channel.guild.voice_client
+        if vc is not None and not isinstance(vc, MusicQueueVoiceClient):
+            await vc.disconnect()
+            vc = None
 
-    def cog_unload(self):
-        self.update.cancel()
+        if vc is None:
+            vc = await voice_channel.connect(cls=MusicQueueVoiceClient)
 
-        for q in self.queues.values():
-            q.clear()
+        if vc.channel != voice_channel:
+            await vc.move_to(voice_channel)
 
-    async def get_voice_client_for_channel(
-        self, ch: discord.VoiceChannel, stop_playing: bool = False
-    ) -> discord.VoiceClient:
-        vc = ch.guild.voice_client
-
-        if vc:
-            if vc.channel != ch:
-                await vc.move_to(ch)
-
-            if stop_playing and vc.is_playing():
-                vc.stop()
-
-        else:
-            vc = await ch.connect()
+        vc.text_channel = text_channel
 
         return vc
 
-    def is_url(self, x: str) -> bool:
-        try:
-            result = urlparse(x)
-            return all([result.scheme, result.netloc])
+    async def autocomplete_yt_search(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+        namespace: app_commands.Namespace
+    ) -> list[app_commands.Choice[str]]:
+        if not current:
+            return []
 
-        except:
-            return False
+        if current.startswith("http://") or current.startswith("https://"):
+            return [app_commands.Choice(name=current, value=current)]
+
+        results = await self.youtube_search(current, 10)
+        if not results:
+            return []
+
+        return [app_commands.Choice(name=r.title, value=r.url) for r in results]
 
     @app_commands.command(description="Odtwarza muzykę w twoim kanale głosowym")
     @app_commands.describe(q="Wyszukiwana fraza/URL")
+    @app_commands.autocomplete(q=autocomplete_yt_search)
     async def play(self, interaction: discord.Interaction, q: str):
-        ch = (
-            interaction.user.voice.channel
-            if interaction.user.voice is not None
-            else None
-        )
-
-        if ch is None:
+        if interaction.user.voice is None or interaction.user.voice.channel is None:
             await interaction.response.send_message(
                 "**Musisz być połączony z kanałem głosowym**", ephemeral=True
             )
             return
 
+        vc = await self.get_client_for_channels(
+            interaction.user.voice.channel, interaction.channel
+        )
+        if not vc:
+            await interaction.response.send_message("**Nie udało się połączyć**")
+            return
+
         await interaction.response.defer()
-
-        queue = self.queues.get(interaction.guild.id)
-
-        if queue is None:
-            queue = MusicQueue(ch, interaction.channel)
-            self.queues[interaction.guild.id] = queue
-
-        elif queue.message_channel != interaction.channel or queue.voice_channel != ch:
-            queue.message_channel = interaction.channel
-            queue.voice_channel = ch
 
         url = self.extract_yt_url(q)
         if url:
-            await self.queue_youtube(interaction, queue, url)
+            await self.queue_youtube(interaction, vc, url)
 
-        elif self.is_url(q):
-            audio = discord.FFmpegPCMAudio(q)
+        elif is_url(q):
             e = discord.Embed(description=q, color=interaction.guild.me.color)
-            e.title = "Odtwarzanie" if queue.empty else "Dodano do kolejki"
-
+            e.title = "Odtwarzanie" if vc.is_standby else "Dodano do kolejki"
             msg = await interaction.followup.send(embed=e, wait=True)
 
-            entry = MusicQueueEntry(q, None, audio, msg)
-            queue.add_entry(entry)
+            await vc.add_entry(q, opus=False, titles=[q], message=msg)
 
         else:  # Search query
             e = discord.Embed(
-                description=f"Wyszukiwanie `{ q }`...", color=interaction.guild.me.color
+                description=f"Wyszukiwanie `{q}`...", color=interaction.guild.me.color
             )
-            await interaction.followup.send(embed=e)
-
+            interaction.message = await interaction.followup.send(embed=e, wait=True)
+            
             results = await self.youtube_search(q, 1)
             if not results:
                 e = discord.Embed(
-                    description=f"Brak wyników wyszukiwania dla: `{ q }`",
+                    description=f"Brak wyników wyszukiwania dla: `{q}`",
                     color=discord.Colour.red(),
                 )
                 await interaction.edit_original_message(embed=e)
                 return
 
-            await self.queue_youtube(interaction, queue, results[0][0])
+            await self.queue_youtube(interaction, vc, results[0].url)
 
-    # async def _play_autocomplete(
-    #     self, ctx: AutocompleteContext, options: dict[str, AutocompleteOptionData]
-    # ):
-    #     q = options["q"].value
-    #     if not q:
-    #         await ctx.send([])
-    #         return
-
-    #     if q.startswith("http://") or q.startswith("https://"):
-    #         await ctx.send([create_choice(name=q[:100], value=q)])
-    #         return
-
-    #     results = await self.youtube_search(q, 5)
-    #     if not results:
-    #         await ctx.send([])
-    #         return
-
-    #     await ctx.send([create_choice(name=r[1][:100], value=r[0]) for r in results])
-
-    # @cog_ext.cog_context_menu(name="Dodaj do kolejki", target=ContextMenuType.MESSAGE)
-    # async def _play_context(self, ctx: MenuContext):
-    #     if ctx.target_message.content:
-    #         url = self.extract_yt_url(ctx.target_message.content)
-    #         await self._play.func(self, ctx, url or ctx.target_message.content)
-
-    #     elif ctx.target_message.embeds:
-    #         e = ctx.target_message.embeds[0]
-    #         text = str(e.to_dict())
-
-    #         url = self.extract_yt_url(text)
-    #         if url:
-    #             await self._play.func(self, ctx, url)
-
-    #         elif e.description or e.title:
-    #             await self._play.func(self, ctx, e.description or e.title)
-
-    #     else:
-    #         await ctx.send("**Błąd: Nie wykryto pasującej treści**", ephemeral=True)
-
-    @tasks.loop(seconds=2.0)
-    async def update(self):
-        await self.bot.wait_until_ready()
-
-        for guild in self.bot.guilds:
-            queue = self.queues.get(guild.id)
-            if queue is None or queue.cleared or queue.num_entries <= 0:
-                if (
-                    guild.voice_client
-                    and not guild.voice_client.is_playing()
-                    and len(guild.voice_client.channel.members) == 1
-                ):
-                    if queue and queue.message_channel:
-                        e = discord.Embed(
-                            description=f"Poszedłem sobie z { guild.voice_client.channel.mention } bo zostałem sam",
-                            color=guild.me.color,
-                        )
-                        await queue.message_channel.send(embed=e)
-
-                    await guild.voice_client.disconnect()
-
-                continue
-
-            queue.vc = await self.get_voice_client_for_channel(queue.voice_channel)
-            if queue.vc is None or queue.vc.is_playing() or queue.vc.is_paused():
-                continue
-
-            next = queue.get_next()
-            if next is None:  # is this possible?
-                continue
-
-            queue.vc.play(next.audio_source, after=next.after)
-
-            msg = next.message
-            e = msg.embeds[0]
-            if e.title != "Odtwarzanie":
-                e.title = "Odtwarzanie"
-                if queue.message_channel.last_message_id == msg.id:
-                    await msg.edit(embed=e)
-                else:
-                    await queue.message_channel.send(embed=e)
+    
 
     @commands.Cog.listener()
     async def on_voice_state_update(
@@ -202,36 +120,12 @@ class Music(commands.Cog, Youtube, Genius):
         if member != self.bot.user:
             return
 
-        if after.channel != before.channel:
-            if before.channel is None:  # joined voice channel
-                self.log.info(
-                    f'Joined vc "{after.channel}" ({after.channel.guild.name})'
-                )
-
-            elif after.channel is None:  # left voice channel
-                self.log.info(
-                    f'Left vc "{before.channel}" ({before.channel.guild.name})'
-                )
-
-                queue = self.queues.get(before.channel.guild.id)
-                if queue is not None:
-                    queue.clear()
-
-            else:  # moved to other channel
-                queue = self.queues.get(after.channel.guild.id)
-                if queue is not None:
-                    queue.voice_channel = after.channel
-
-                self.log.info(
-                    f'Moved to vc "{after.channel}" ({after.channel.guild.name})'
-                )
-
         if not after.self_deaf:
             await member.guild.change_voice_state(channel=after.channel, self_deaf=True)
 
     @app_commands.command(description="Rozłącza bota od kanału głosowego")
     async def disconnect(self, interaction: discord.Interaction):
-        vc = interaction.guild.voice_client
+        vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -241,7 +135,7 @@ class Music(commands.Cog, Youtube, Genius):
 
     @app_commands.command(name="pause", description="Pauzuje odtwarzanie muzyki")
     async def pause(self, interaction: discord.Interaction):
-        vc = interaction.guild.voice_client
+        vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -251,7 +145,7 @@ class Music(commands.Cog, Youtube, Genius):
 
     @app_commands.command(name="resume", description="Wznawia odtwarzanie muzyki")
     async def resume(self, interaction: discord.Interaction):
-        vc = interaction.guild.voice_client
+        vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -262,31 +156,27 @@ class Music(commands.Cog, Youtube, Genius):
     @app_commands.command(description="Zakańcza odtwarzanie muzyki i czyści kolejkę")
     async def stop(self, interaction: discord.Interaction):
         vc = interaction.guild.voice_client
-        if not vc:
+        if not vc or not isinstance(vc, MusicQueueVoiceClient):
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
 
-        queue = self.queues.get(interaction.guild.id)
-        if queue is not None:
-            queue.clear()
-
+        vc.clear_entries()
         vc.stop()
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Czyści kolejkę muzyki")
     async def clear(self, interaction: discord.Interaction):
-        queue = self.queues.get(interaction.guild_id)
-        if queue is None:
-            await interaction.response.send_message("**Brak kolejki**", ephemeral=True)
+        vc = interaction.guild.voice_client
+        if not vc or not isinstance(vc, MusicQueueVoiceClient):
+            await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
 
-        queue.clear()
-
+        vc.clear_entries()
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Pomija aktualnie odtwarzany element kolejki")
     async def skip(self, interaction: discord.Interaction):
-        vc = interaction.guild.voice_client
+        vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -296,87 +186,117 @@ class Music(commands.Cog, Youtube, Genius):
 
     @app_commands.command(description="Wyświetla zawartość kolejki")
     async def queue(self, interaction: discord.Interaction):
-        queue = self.queues.get(interaction.guild.id)
-        if queue is None:
-            await interaction.response.send_message("**Brak kolejki**", ephemeral=True)
+        vc = interaction.guild.voice_client
+        if not vc or not isinstance(vc, MusicQueueVoiceClient):
+            await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
 
-        if queue.num_entries < 1:
-            await interaction.response.send_message(
-                "**W kolejce pusto jak w głowie Jacka**", ephemeral=True
-            )
+        if len(vc.entries) == 0:
+            await interaction.response.send_message("**Kolejka jest pusta**")
             return
 
-        e = discord.Embed(title="Kolejka", color=interaction.guild.me.color)
+        embed = discord.Embed(title="Kolejka", color=interaction.guild.me.color)
 
-        e.add_field(
-            inline=True,
-            name="#",
-            value="\n".join([str(n + 1) for n in range(queue.num_entries)]),
-        )
-        e.add_field(inline=True, name="Tytuł", value="\n".join(queue.entries))
+        nums = []
+        titles = []
+        for i, e in enumerate(vc.entries, 1):
+            nums.append(str(i))
+            title = e.titles[0] if e.titles else "Nieznany"
+            titles.append(title)
 
-        await interaction.response.send_message(embed=e)
+        embed.add_field(inline=True, name="#", value="\n".join(nums))
+        embed.add_field(inline=True, name="Tytuł", value="\n".join(titles))
+
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.command(description="Usuwa pozycję z kolejki muzyki")
-    @app_commands.describe(pos="Element kolejki")
-    async def remove(self, interaction: discord.Interaction, pos: int):
-        queue = self.queues.get(interaction.guild.id)
-        if queue is None:
-            await interaction.response.send_message("**Brak kolejki**", ephemeral=True)
+    @app_commands.describe(num="Element kolejki")
+    async def remove(self, interaction: discord.Interaction, num: int):
+        vc = interaction.guild.voice_client
+        if not vc or not isinstance(vc, MusicQueueVoiceClient):
+            await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
 
-        if queue.num_entries < 1:
-            await interaction.response.send_message(
-                "**W kolejce pusto jak w głowie Jacka**", ephemeral=True
-            )
+        if len(vc.entries) == 0:
+            await interaction.response.send_message("**Kolejka jest pusta**")
             return
 
-        if pos < 1 or pos > queue.num_entries:
-            await interaction.response.send_message(
-                "**Nieprawidłowy element kolejki**", ephemeral=True
-            )
+        if num < 1 or num > len(vc.entries):
+            await interaction.response.send_message("**Nieprawidłowy element kolejki**")
             return
 
-        queue.remove(pos - 1)
+        vc.remove_entry(num - 1)
 
         await interaction.response.send_message(":ok_hand:")
 
-    @app_commands.command(description="Pobiera tekst piosenki")
+    @app_commands.command(
+        description="Pobiera tekst piosenki aktualnie odtwarzanej lub podanej"
+    )
     @app_commands.describe(q="Wyszukiwana fraza")
     async def lyrics(self, interaction: discord.Interaction, q: str = None):
-        if q:
-            tries = [q]
-        else:
-            queue = self.queues.get(interaction.guild.id)
-            if queue:
-                tries = queue.latest_track
+        titles = [q]
+        if not q:
+            vc = interaction.guild.voice_client
+            if (
+                vc
+                and isinstance(vc, MusicQueueVoiceClient)
+                and vc.source
+                and isinstance(vc.source, MusicQueueAudioSource)
+            ):
+                titles = vc.source.titles
 
-        if not any(tries):
+        if not any(titles):
             await interaction.response.send_message(
-                "**Brak ostatnio odtwarzanego utworu**", ephemeral=True
+                "**Brak aktualnie odtwarzanego utworu**", ephemeral=True
             )
             return
 
         await interaction.response.defer()
 
-        for q in tries:
-            self.log.info(f'Fetching lyrics for "{q}"')
-            resolved, lyrics = await self.get_genius_lyrics(q)
-            if lyrics:
+        for t in titles:
+            self.log.debug(f'Fetching lyrics for "{t}"')
+            data = await get_genius_lyrics(self.bot.http._HTTPClient__session, q=t)
+            if data:
                 break
 
-        if not lyrics:
+        if not data:
             await interaction.followup.send("**Tekst piosenki niedostępny**")
             return
 
-        await interaction.followup.send(f"**Tekst dla** `{resolved}`")
+        await interaction.followup.send(f"**Tekst dla** `{data.resolved_title}`")
 
         # pagination for discord 2000 character limit
-        pages = [lyrics[i : i + 2000] for i in range(0, len(lyrics), 2000)]
+        pages = [data.lyrics[i : i + 2000] for i in range(0, len(data.lyrics), 2000)]
         for p in pages:
             await interaction.channel.send(p)
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Music(bot))
+    cog = Music(bot)
+
+    # ugly, i hate how these can't be in cogs
+    @app_commands.context_menu(name="Dodaj do kolejki")
+    async def play_context(
+        interaction: discord.Interaction, message: discord.Message
+    ):
+        if message.content:
+            url = cog.extract_yt_url(message.content)
+            await cog.play.callback(cog, interaction, url or message.content)
+
+        elif message.embeds:
+            e = message.embeds[0]
+            text = str(e.to_dict())
+
+            url = cog.extract_yt_url(text)
+            if url:
+                await cog.play.callback(cog, interaction, url)
+
+            elif e.description or e.title:
+                await cog.play.callback(cog, interaction, e.description or e.title)
+
+        else:
+            await interaction.response.send_message("**Błąd: Nie znaleziono pasującej treści**", ephemeral=True)
+
+    bot.tree.add_command(play_context)
+
+    bot.add_cog(cog)

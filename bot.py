@@ -10,8 +10,8 @@ logging.basicConfig(
 )
 _log = logging.getLogger(__name__)
 
-intents = discord.Intents.default()
-intents.message_content = True  # jsk
+intents = discord.Intents.all()
+intents.presences = False
 
 bot = Bot(command_prefix=".", help_command=None, intents=intents)
 

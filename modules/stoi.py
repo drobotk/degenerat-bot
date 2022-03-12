@@ -7,6 +7,7 @@ import logging
 import asyncssh
 from aiohttp import ClientSession
 
+
 class Stoi(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot

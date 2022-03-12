@@ -44,7 +44,7 @@ class Activities(commands.Cog):
         self.update.start()
 
     def cog_unload(self):
-        self.update.cancel()
+        self.update.stop()
 
     @tasks.loop(minutes=1.0)
     async def update(self):

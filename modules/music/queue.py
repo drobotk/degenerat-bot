@@ -1,82 +1,112 @@
-from discord import AudioSource, Message, VoiceChannel, TextChannel, VoiceClient
-from typing import Callable, Any, Optional
+import discord
+from discord.ext import tasks
+
+import logging
 
 
-class MusicQueueEntry:
-    def __init__(
+class MusicQueueAudioSource:
+    titles: list[str]
+    message: discord.Message
+
+
+class MQFFmpegPCMAudio(MusicQueueAudioSource, discord.FFmpegPCMAudio):
+    pass
+
+
+class MQFFmpegOpusAudio(MusicQueueAudioSource, discord.FFmpegOpusAudio):
+    pass
+
+
+class MusicQueueVoiceClient(discord.VoiceClient):
+    def __init__(self, client: discord.Client, channel: discord.abc.Connectable):
+        super().__init__(client, channel)
+
+        self.log = logging.getLogger(__name__)
+
+        self.entries: list[MusicQueueAudioSource] = []
+        self.text_channel: discord.TextChannel = None
+
+        self.update.start()
+
+    async def add_entry(
         self,
-        title: str,
-        alt_titles: Optional[list[str]],
-        audio_source: AudioSource,
-        message: Message,
-        after: Optional[Callable[[Exception], Any]] = None,
-    ):
-        self.title = title
-        self._titles = alt_titles
-        self.audio_source = audio_source
-        self.message = message
-        self.after = after
+        source: str,
+        *,
+        opus: bool,
+        titles: list[str] = None,
+        message: discord.Message = None,
+    ) -> bool:
+        if opus:
+            entry = await MQFFmpegOpusAudio.from_probe(source)
+        else:
+            entry = MQFFmpegPCMAudio(source)
 
-    def cleanup(self):
-        if self.audio_source is not None:
-            self.audio_source.cleanup()
+        if not entry:
+            return False
 
-        if self.after is not None:
-            self.after(None)
+        entry.titles = titles
+        entry.message = message
+        self.entries.append(entry)
 
+        return True
 
-class MusicQueue:
-    def __init__(self, voice_channel: VoiceChannel, message_channel: TextChannel):
-        self.voice_channel = voice_channel
-        self.message_channel = message_channel
+    def remove_entry(self, i: int):
+        entry = self.entries.pop(i)
+        entry.cleanup()
 
-        self.vc: VoiceClient = None
+    def clear_entries(self):
+        for e in self.entries:
+            e.cleanup()
 
-        self._entries: list[MusicQueueEntry] = []
-        self._cleared = True
+        self.entries = []
 
-        self.latest_track: str = ""
-
-    def add_entry(self, entry: MusicQueueEntry):
-        self._cleared = False
-        self._entries.append(entry)
-
-    @property
-    def num_entries(self) -> int:
-        return len(self._entries)
+    async def disconnect(self, *, force: bool = False):
+        self.update.stop()
+        self.clear_entries()
+        return await super().disconnect(force=force)
 
     @property
-    def empty(self) -> bool:
-        return self._cleared or (
-            self.vc is not None and not self.vc.is_playing() and not self.vc.is_paused()
-        )
+    def is_standby(self):
+        return len(self.entries) < 1 and not self.is_playing() and not self.is_paused() 
 
-    @property
-    def entries(self) -> list[str]:
-        return [entry.title for entry in self._entries]
-
-    def remove(self, index: int):
-        if index >= 0 and index < len(self._entries):
-            entry = self._entries.pop(index)
-            entry.cleanup()
-
-    def get_next(self) -> MusicQueueEntry:
-        if not self._entries:
+    @tasks.loop(seconds=1.0)
+    async def update(self):
+        self.log.debug("MusicQueueVoiceClient update")
+        if not self.is_connected():
             return
 
-        entry = self._entries.pop(0)
-        self.latest_track = entry._titles
+        if len(self.entries) == 0:
+            if not self.is_playing() and self.channel.members == [self.guild.me]:
+                await self.disconnect()
+                if self.text_channel:
+                    e = discord.Embed(
+                        description=f"Poszedłem sobie z {self.channel.mention} bo zostałem sam",
+                        color=self.guild.me.color,
+                    )
+                    await self.text_channel.send(embed=e)
 
-        return entry
+            return
 
-    def clear(self):
-        self._cleared = True
+        if self.is_playing():
+            return
 
-        for entry in self._entries:
-            entry.cleanup()
+        next = self.entries.pop(0)
+        self.play(next)
 
-        self._entries = []
+        if not isinstance(next, MusicQueueAudioSource):
+            return
 
-    @property
-    def cleared(self) -> bool:
-        return self._cleared
+        msg = next.message
+        if not msg or not msg.embeds:
+            return
+
+        if not self.text_channel:
+            self.text_channel = msg.channel
+
+        e = next.message.embeds[0]
+        if e.title != "Odtwarzanie":
+            e.title = "Odtwarzanie"
+            if self.text_channel.last_message_id == msg.id:
+                await msg.edit(embed=e)
+            else:
+                await self.text_channel.send(embed=e)
