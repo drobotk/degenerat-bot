@@ -13,7 +13,7 @@ _log = logging.getLogger(__name__)
 intents = discord.Intents.all()
 intents.presences = False
 
-bot = Bot(command_prefix=".", help_command=None, intents=intents)
+bot = Bot(command_prefix=",", help_command=None, intents=intents)
 
 # go ahead and hate me for this
 async def sync_globals_to(guild: discord.Guild):
