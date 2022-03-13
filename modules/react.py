@@ -1,7 +1,7 @@
-from operator import mod
 import discord
 from discord.ext import commands
 from discord import app_commands, ui
+
 
 class React(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -142,14 +142,13 @@ class ReactionModal(ui.Modal, title="Dodaj reakcje"):
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.pong()
 
+
 def setup(bot: commands.Bot):
     cog = React(bot)
 
     # ugly, i hate how these can't be in cogs
     @app_commands.context_menu(name="Dodaj Reakcje")
-    async def react_context(
-        interaction: discord.Interaction, message: discord.Message
-    ):
+    async def react_context(interaction: discord.Interaction, message: discord.Message):
         modal = ReactionModal()
         await interaction.response.send_modal(modal)
         if await modal.wait():
