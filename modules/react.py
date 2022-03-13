@@ -1,5 +1,7 @@
+from operator import mod
+import discord
 from discord.ext import commands
-
+from discord import app_commands, ui
 
 class React(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -110,6 +112,16 @@ class React(commands.Cog):
 
         return out
 
+    async def add_reaction(self, target: discord.Message, text: str):
+        out = self.text_to_emojis(text)
+        if not out:
+            return
+
+        await target.clear_reactions()
+
+        for x in out:
+            await target.add_reaction(x)
+
     @commands.command()
     async def react(
         self, ctx: commands.Context, *, text: str
@@ -121,15 +133,30 @@ class React(commands.Cog):
         await ctx.message.delete()
         target = await ctx.channel.fetch_message(tid)
 
-        out = self.text_to_emojis(text)
-        if not out:
-            return
+        await self.add_reaction(target, text)
 
-        await target.clear_reactions()
 
-        for x in out:
-            await target.add_reaction(x)
+class ReactionModal(ui.Modal, title="Dodaj reakcje"):
+    text = ui.TextInput(label="Tekst")
 
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.pong()
 
 def setup(bot: commands.Bot):
-    bot.add_cog(React(bot))
+    cog = React(bot)
+
+    # ugly, i hate how these can't be in cogs
+    @app_commands.context_menu(name="Dodaj Reakcje")
+    async def react_context(
+        interaction: discord.Interaction, message: discord.Message
+    ):
+        modal = ReactionModal()
+        await interaction.response.send_modal(modal)
+        if await modal.wait():
+            return
+
+        await cog.add_reaction(message, modal.text.value)
+
+    bot.tree.add_command(react_context)
+
+    bot.add_cog(cog)
