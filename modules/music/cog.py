@@ -25,6 +25,7 @@ def dots_after(inp: str, length: int) -> str:
 
     return inp[:97] + "..."
 
+
 class Music(commands.Cog, Youtube):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -53,19 +54,24 @@ class Music(commands.Cog, Youtube):
         self,
         interaction: discord.Interaction,
         current: str,
-        namespace: app_commands.Namespace
+        namespace: app_commands.Namespace,
     ) -> list[app_commands.Choice[str]]:
         if not current:
             return []
 
         if current.startswith("http://") or current.startswith("https://"):
-            return [app_commands.Choice(name=dots_after(current, 100), value=current[:100])]
+            return [
+                app_commands.Choice(name=dots_after(current, 100), value=current[:100])
+            ]
 
         results = await self.youtube_search(current, 10)
         if not results:
             return []
 
-        return [app_commands.Choice(name=dots_after(r.title, 100), value=r.url) for r in results]
+        return [
+            app_commands.Choice(name=dots_after(r.title, 100), value=r.url)
+            for r in results
+        ]
 
     @app_commands.command(description="Odtwarza muzykę w twoim kanale głosowym")
     @app_commands.describe(q="Wyszukiwana fraza/URL")
@@ -102,7 +108,7 @@ class Music(commands.Cog, Youtube):
                 description=f"Wyszukiwanie `{q}`...", color=interaction.guild.me.color
             )
             interaction.message = await interaction.followup.send(embed=e, wait=True)
-            
+
             results = await self.youtube_search(q, 1)
             if not results:
                 e = discord.Embed(
@@ -113,8 +119,6 @@ class Music(commands.Cog, Youtube):
                 return
 
             await self.queue_youtube(interaction, vc, results[0].url)
-
-    
 
     @commands.Cog.listener()
     async def on_voice_state_update(
@@ -282,9 +286,7 @@ def setup(bot: commands.Bot):
 
     # ugly, i hate how these can't be in cogs
     @app_commands.context_menu(name="Dodaj do kolejki")
-    async def play_context(
-        interaction: discord.Interaction, message: discord.Message
-    ):
+    async def play_context(interaction: discord.Interaction, message: discord.Message):
         if message.content:
             url = cog.extract_yt_url(message.content)
             await cog.play.callback(cog, interaction, url or message.content)
@@ -301,7 +303,9 @@ def setup(bot: commands.Bot):
                 await cog.play.callback(cog, interaction, e.description or e.title)
 
         else:
-            await interaction.response.send_message("**Błąd: Nie znaleziono pasującej treści**", ephemeral=True)
+            await interaction.response.send_message(
+                "**Błąd: Nie znaleziono pasującej treści**", ephemeral=True
+            )
 
     bot.tree.add_command(play_context)
 

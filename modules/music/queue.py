@@ -67,7 +67,7 @@ class MusicQueueVoiceClient(discord.VoiceClient):
 
     @property
     def is_standby(self):
-        return len(self.entries) == 0 and not self.is_playing() and not self.is_paused() 
+        return len(self.entries) == 0 and not self.is_playing() and not self.is_paused()
 
     @tasks.loop(seconds=1.0)
     async def update(self):
