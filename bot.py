@@ -5,7 +5,7 @@ import os
 import logging
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(name)s [%(levelname)s] %(message)s",
 )
 _log = logging.getLogger(__name__)

@@ -19,6 +19,12 @@ def is_url(x: str) -> bool:
         return False
 
 
+def dots_after(inp: str, length: int) -> str:
+    if len(inp) <= length:
+        return inp
+
+    return inp[:97] + "..."
+
 class Music(commands.Cog, Youtube):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -53,13 +59,13 @@ class Music(commands.Cog, Youtube):
             return []
 
         if current.startswith("http://") or current.startswith("https://"):
-            return [app_commands.Choice(name=current, value=current)]
+            return [app_commands.Choice(name=dots_after(current, 100), value=current[:100])]
 
         results = await self.youtube_search(current, 10)
         if not results:
             return []
 
-        return [app_commands.Choice(name=r.title, value=r.url) for r in results]
+        return [app_commands.Choice(name=dots_after(r.title, 100), value=r.url) for r in results]
 
     @app_commands.command(description="Odtwarza muzykę w twoim kanale głosowym")
     @app_commands.describe(q="Wyszukiwana fraza/URL")
@@ -238,7 +244,7 @@ class Music(commands.Cog, Youtube):
         if not q:
             vc = interaction.guild.voice_client
             if (
-                vc
+                vc is not None
                 and isinstance(vc, MusicQueueVoiceClient)
                 and vc.source
                 and isinstance(vc.source, MusicQueueAudioSource)
