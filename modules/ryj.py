@@ -25,5 +25,5 @@ class Ryj(commands.Cog):
                 await interaction.followup.send("**Coś poszło nie tak**")
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Ryj(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Ryj(bot))

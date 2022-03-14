@@ -97,5 +97,5 @@ class Triggers(commands.Cog):
         await message.reply(res, mention_author=False)
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Triggers(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Triggers(bot))

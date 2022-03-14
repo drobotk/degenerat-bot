@@ -59,7 +59,7 @@ class Img(commands.Cog):
             await interaction.followup.send(f"**Coś poszło nie tak:** {e}")
 
 
-def setup(bot: commands.Bot):
+async def setup(bot: commands.Bot):
     cog = Img(bot)
 
     # ugly, i hate how these can't be in cogs
@@ -74,4 +74,4 @@ def setup(bot: commands.Bot):
 
     bot.tree.add_command(img_context)
 
-    bot.add_cog(cog)
+    await bot.add_cog(cog)

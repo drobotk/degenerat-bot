@@ -50,5 +50,5 @@ class Cow(commands.Cog):
         await interaction.followup.send(msg)
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Cow(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Cow(bot))

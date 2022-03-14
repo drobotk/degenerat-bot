@@ -104,5 +104,5 @@ class Stoi(commands.Cog):
         await interaction.edit_original_message(embed=e)
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Stoi(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Stoi(bot))

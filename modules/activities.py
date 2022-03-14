@@ -63,5 +63,5 @@ class Activities(commands.Cog):
         await self.bot.change_presence(activity=activity)
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Activities(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Activities(bot))

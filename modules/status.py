@@ -42,5 +42,5 @@ class Status(commands.Cog):
         await interaction.edit_original_message(content=None, embed=e)
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Status(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Status(bot))

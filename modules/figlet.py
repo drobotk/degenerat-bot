@@ -24,7 +24,7 @@ class Figlet(commands.Cog):
         await interaction.response.send_message(msg)
 
 
-def setup(bot: commands.Bot):
+async def setup(bot: commands.Bot):
     cog = Figlet(bot)
 
     # ugly, i hate how these can't be in cogs
@@ -41,4 +41,4 @@ def setup(bot: commands.Bot):
 
     bot.tree.add_command(figlet_context)
 
-    bot.add_cog(cog)
+    await bot.add_cog(cog)

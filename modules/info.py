@@ -14,9 +14,7 @@ class Info(commands.Cog):
         e = discord.Embed(colour=interaction.guild.me.colour)
 
         avatar = (
-            interaction.guild.me.avatar.url
-            if interaction.guild.me.avatar
-            else discord.embeds.EmptyEmbed
+            interaction.guild.me.avatar.url if interaction.guild.me.avatar else None
         )
         e.set_author(name=str(self.bot.user), icon_url=avatar)
 
@@ -42,5 +40,5 @@ class Info(commands.Cog):
         await interaction.response.send_message(embed=e, view=view)
 
 
-def setup(bot: commands.Bot):
-    bot.add_cog(Info(bot))
+async def setup(bot: commands.Bot):
+    await bot.add_cog(Info(bot))
