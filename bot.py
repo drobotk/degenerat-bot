@@ -71,7 +71,7 @@ async def runner():
 
 def main():
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format="%(name)s [%(levelname)s] %(message)s",
     )
 

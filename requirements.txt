@@ -1,7 +1,7 @@
 async_property
 aiohttp
 PyNaCl
-git+https://github.com/Rapptz/discord.py
+git+https://github.com/Rapptz/discord.py.git@refs/pull/7686/merge
 git+https://github.com/yt-dlp/yt-dlp
 pyfiglet
 asyncssh
