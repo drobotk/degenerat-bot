@@ -130,6 +130,7 @@ class TTTButton(ui.Button):
             )
 
         elif state is TTTState.Tie:
+            self.view.stop()
             text = self.view.header + self.view.tie
 
         else:
