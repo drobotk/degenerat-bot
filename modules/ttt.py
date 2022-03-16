@@ -1,4 +1,3 @@
-from email import header
 from enum import Enum, auto
 import discord
 from discord.ext import commands
@@ -13,32 +12,49 @@ class TTTState(Enum):
 
 
 class TTTGameView(ui.View):
-    header: str = "**--- Kółko i Krzyżyk ---**\n"
+    message: discord.InteractionMessage
+
+    header: str = "**--- Kółko i Krzyżyk ---**\n--- {} vs. {} ---\n\n"
     gameplay: str = "Ruch: {}"
     win: str = "Koniec gry! Wygrywa: {}"
     tie: str = "Koniec gry - remis!"
+    timedout: str = "Gra wygasła! Użyj komendy `/ttt`, aby zagrać ponownie"
+    Empty: str = "▪️"
     X: str = "❌"
     O: str = "⭕"
 
     win_states: list[tuple[int]] = [
         # horizontal
-        (0, 1, 2), (3, 4, 5), (6, 7, 8),
+        (0, 1, 2),
+        (3, 4, 5),
+        (6, 7, 8),
         # vertical
-        (0, 3, 6), (1, 4, 7), (2, 5, 8),
+        (0, 3, 6),
+        (1, 4, 7),
+        (2, 5, 8),
         # diagonal
-        (0, 4, 8), (2, 4, 6),  
+        (0, 4, 8),
+        (2, 4, 6),
     ]
 
     def __init__(self, player1: discord.User, player2: discord.User):
-        super().__init__(timeout=120)
+        super().__init__(timeout=300)
         for i in range(9):
             self.add_item(
-                TTTButton(style=discord.ButtonStyle.blurple, label="▪️", row=int(i / 3))
+                TTTButton(
+                    style=discord.ButtonStyle.blurple, label=self.Empty, row=int(i / 3)
+                )
             )
 
         self.players = [player1, player2]
         self.moves = 0
         self.state: TTTState = TTTState.Gameplay
+
+        self.header = self.header.format(player1.mention, player2.mention)
+
+    async def on_timeout(self):
+        text = self.header + self.timedout
+        await self.message.edit(content=text, view=None)
 
     @property
     def current_move(self) -> discord.User:
@@ -52,8 +68,11 @@ class TTTGameView(ui.View):
         player2: discord.User,
     ):
         game = cls(player1, player2)
-        text = cls.header + cls.gameplay.format(player1.mention)
+        text = cls.header.format(
+            player1.mention, player2.mention
+        ) + cls.gameplay.format(player1.mention)
         await interaction.response.send_message(text, view=game)
+        game.message = await interaction.original_message()
 
     def update_state(self) -> TTTState:
         for indices in self.win_states:
@@ -85,7 +104,7 @@ class TTTButton(ui.Button):
     async def callback(self, interaction: discord.Interaction):
         if interaction.user not in self.view.players:
             await interaction.response.send_message(
-                f"Nie dla psa! Tutaj grają {self.view.players[0].mention} i {self.view.players[1].mention}. Aby zagrać, użyj komendy /ttt",
+                f"Nie dla psa! Tutaj grają {self.view.players[0].mention} i {self.view.players[1].mention}. Aby zagrać, użyj komendy `/ttt`",
                 ephemeral=True,
             )
             return
@@ -114,6 +133,7 @@ class TTTButton(ui.Button):
             text = self.view.header + self.view.tie
 
         else:
+            self.view.stop()
             text = self.view.header + self.view.win.format(
                 self.view.current_move.mention
             )
