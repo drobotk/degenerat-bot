@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
+from discord import app_commands, ui
 
 import logging
 from urllib.parse import urlparse
@@ -24,6 +24,51 @@ def dots_after(inp: str, length: int) -> str:
         return inp
 
     return inp[:97] + "..."
+
+
+class MusicControls(ui.View):
+    children: list[ui.Button]
+    message: discord.InteractionMessage
+    vc: MusicQueueVoiceClient
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        self.vc = interaction.guild.voice_client
+        if not self.vc or not isinstance(self.vc, MusicQueueVoiceClient):
+            await interaction.response.send_message("**Nie połączono**", ephemeral=True)
+            return False
+
+        return True
+
+    @ui.button(label="Pause/Resume", emoji="⏯️")
+    async def pause_resume(self, button: ui.Button, interaction: discord.Interaction):
+        if self.vc.is_paused():
+            self.vc.resume()
+        else:
+            self.vc.pause()
+
+        await interaction.response.defer()
+
+    @ui.button(label="Skip", emoji="⏭️")
+    async def skip(self, button: ui.Button, interaction: discord.Interaction):
+        self.vc.stop()
+        await interaction.response.defer()
+
+    @ui.button(label="Stop", emoji="⏹️")
+    async def stop(self, button: ui.Button, interaction: discord.Interaction):
+        self.vc.clear_entries()
+        self.vc.stop()
+        await interaction.response.defer()
+
+    @ui.button(label="Disconnect", emoji="👋")
+    async def disconnect(self, button: ui.Button, interaction: discord.Interaction):
+        await self.vc.disconnect()
+        await interaction.response.defer()
+
+    async def on_timeout(self):
+        for c in self.children:
+            c.disabled = True
+
+        await self.message.edit(view=self)
 
 
 class Music(commands.Cog, Youtube):
@@ -51,18 +96,14 @@ class Music(commands.Cog, Youtube):
         return vc
 
     async def autocomplete_yt_search(
-        self,
-        interaction: discord.Interaction,
-        current: str,
-        namespace: app_commands.Namespace,
+        self, interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[str]]:
-        if not current:
+        if (
+            not current
+            or current.startswith("http://")
+            or current.startswith("https://")
+        ):
             return []
-
-        if current.startswith("http://") or current.startswith("https://"):
-            return [
-                app_commands.Choice(name=dots_after(current, 100), value=current[:100])
-            ]
 
         results = await self.youtube_search(current, 10)
         if not results:
@@ -238,6 +279,17 @@ class Music(commands.Cog, Youtube):
         vc.remove_entry(num - 1)
 
         await interaction.response.send_message(":ok_hand:")
+
+    @app_commands.command(description="Panel sterowania muzyką")
+    async def controls(self, interaction: discord.Interaction):
+        vc = interaction.guild.voice_client
+        if not vc or not isinstance(vc, MusicQueueVoiceClient):
+            await interaction.response.send_message("**Nie połączono**", ephemeral=True)
+            return
+
+        view = MusicControls(timeout=300)
+        await interaction.response.send_message(view=view)
+        view.message = await interaction.original_message()
 
     @app_commands.command(
         description="Pobiera tekst piosenki aktualnie odtwarzanej lub podanej"
