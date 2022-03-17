@@ -54,7 +54,10 @@ class TTTGameView(ui.View):
 
     async def on_timeout(self):
         text = self.header + self.timedout
-        await self.message.edit(content=text, view=None)
+        for b in self.children:
+            b.disabled = True
+
+        await self.message.edit(content=text, view=self)
 
     @property
     def current_move(self) -> discord.User:
