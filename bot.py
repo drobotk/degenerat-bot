@@ -53,7 +53,8 @@ async def runner():
     await bot.load_extension("modules.info")
     await bot.load_extension("modules.ttt")
 
-    await bot.start(os.getenv("DISCORD_TOKEN"))
+    async with bot:
+        await bot.start(os.getenv("DISCORD_TOKEN"))
 
 
 def main():
