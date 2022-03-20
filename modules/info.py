@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
+from discord import app_commands, utils
 
 import sys
 
@@ -32,7 +32,20 @@ class Info(commands.Cog):
         e.add_field(name="Python", value=sys.version, inline=False)
         e.add_field(name="discord.py", value=discord.__version__, inline=False)
 
-        invite_url = f"https://discord.com/api/oauth2/authorize?client_id={self.bot.user.id}&permissions=412857396288&scope=bot%20applications.commands"
+        app_info = await self.bot.http.application_info()
+        install_params = app_info.get("install_params")
+        if not install_params:
+            await interaction.response.send_message(embed=e)
+            return
+
+        scopes: list[str] = install_params.get("scopes")
+        permissions: str = install_params.get("permissions")
+
+        invite_url = utils.oauth_url(
+            self.bot.user.id,
+            permissions=discord.Permissions(int(permissions)),
+            scopes=scopes,
+        )
 
         view = discord.ui.View()
         view.add_item(discord.ui.Button(label="Dodaj do serwera", url=invite_url))
