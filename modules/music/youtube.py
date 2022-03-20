@@ -4,6 +4,7 @@ from discord.ext import commands
 import os
 import re
 import logging
+import json
 from yt_dlp import YoutubeDL
 from aiohttp import ClientSession
 from dataclasses import dataclass
@@ -47,7 +48,7 @@ class Youtube:
         )
 
         self.re_search_results = re.compile(
-            r'"videoRenderer":{"videoId":"(.{11})"(?:.+?)"title":{"runs":\[{"text":"(.+?)"}\],"accessibility"'
+            r'{"videoRenderer":{"videoId":".+?"maxOneLine":false}]}}'
         )
 
     def format_selector(self, ctx: dict) -> list[dict]:
@@ -75,12 +76,17 @@ class Youtube:
             text = await r.text()
 
         result = []
-        for i, m in enumerate(self.re_search_results.finditer(text), 1):
-            vid = m.group(1)
-            # remove json escape sequences :scraper_moment:
-            title = re.sub(r"\\([\\\"])", "\g<1>", m.group(2))
-            result.append(YoutubeVideo(id=vid, title=title))
-            if i == amount:
+        for m in self.re_search_results.finditer(text):
+            try:
+                data = json.loads(m.group())
+                video_id: str = data["videoRenderer"]["videoId"]
+                title: str = data["videoRenderer"]["title"]["runs"][0]["text"]
+
+            except:
+                continue
+
+            result.append(YoutubeVideo(id=video_id, title=title))
+            if len(result) >= amount:
                 break
 
         return result
