@@ -325,11 +325,16 @@ class Music(commands.Cog, Youtube):
             await interaction.followup.send("**Tekst piosenki niedostępny**")
             return
 
-        await interaction.followup.send(f"**Tekst dla** `{data.resolved_title}`")
+        text = f"**Tekst dla** `{data.resolved_title}`\n{data.lyrics}"
 
         # pagination for discord 2000 character limit
-        pages = [data.lyrics[i : i + 2000] for i in range(0, len(data.lyrics), 2000)]
-        for p in pages:
+        pages = [text[i : i + 2000] for i in range(0, len(text), 2000)]
+
+        # send first page as the interaction response
+        await interaction.followup.send(pages[0])
+
+        # remaining pages get sent normally
+        for p in pages[1:]:
             await interaction.channel.send(p)
 
 
