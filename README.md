@@ -1,3 +1,3 @@
 # degenerat-bot
 
-Bartek to huj
+Bartek to spoko gość
