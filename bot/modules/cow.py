@@ -3,19 +3,19 @@ from discord.ext import commands
 from discord import app_commands
 
 import cowsay
-from aiohttp import ClientSession
+
+from ..bot import DegeneratBot
 
 
 class Cow(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
 
     @app_commands.command(description="Mądrości krowy")
     async def cow(self, interaction: discord.Interaction):
         await interaction.response.defer()
 
-        session: ClientSession = self.bot.http._HTTPClient__session
-        async with session.get(
+        async with self.bot.session.get(
             "https://evilinsult.com/generate_insult.php?lang=en&type=json"
         ) as r:
             if not r.ok:
@@ -30,7 +30,7 @@ class Cow(commands.Cog):
 
         params = {"client": "gtx", "dt": "t", "sl": "en", "tl": "pl", "q": english}
 
-        async with session.get(
+        async with self.bot.session.get(
             "https://translate.googleapis.com/translate_a/single", params=params
         ) as r:
             if not r.ok:
@@ -50,5 +50,5 @@ class Cow(commands.Cog):
         await interaction.followup.send(msg)
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     await bot.add_cog(Cow(bot))

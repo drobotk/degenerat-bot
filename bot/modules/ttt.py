@@ -1,7 +1,10 @@
 from enum import Enum, auto
+
 import discord
 from discord.ext import commands
 from discord import app_commands, ui
+
+from ..bot import DegeneratBot
 
 
 class TTTState(Enum):
@@ -146,8 +149,8 @@ class TTTButton(ui.Button):
 
 
 class TicTacToe(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
 
     @app_commands.command(description="Gra w kółko i krzyżyk")
     @app_commands.describe(opponent="Twój przeciwnik")
@@ -155,7 +158,7 @@ class TicTacToe(commands.Cog):
         await TTTGameView.send_game(interaction, interaction.user, opponent)
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     cog = TicTacToe(bot)
 
     @app_commands.context_menu(name="Zagraj w kółko i krzyżyk")

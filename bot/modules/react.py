@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands, ui
 
+from ..bot import DegeneratBot
 
 l_to_e = {
     "A": ("🇦", "🅰️"),
@@ -111,8 +112,8 @@ def text_to_emojis(text: str) -> list[str]:
 
 
 class React(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
 
     @commands.command()
     async def react(
@@ -165,7 +166,7 @@ async def react_context(interaction: discord.Interaction, message: discord.Messa
     await interaction.response.send_modal(modal)
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     cog = React(bot)
 
     bot.tree.add_command(react_context)

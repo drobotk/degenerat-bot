@@ -1,12 +1,14 @@
+import random
+
 import discord
 from discord.ext import commands, tasks
 
-import random
+from ..bot import DegeneratBot
 
 
 class Activities(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
 
         self.activities = [
             discord.Game("tomb rajder"),
@@ -63,5 +65,5 @@ class Activities(commands.Cog):
         await self.bot.change_presence(activity=activity)
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     await bot.add_cog(Activities(bot))

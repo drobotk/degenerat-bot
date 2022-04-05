@@ -1,7 +1,8 @@
+import typing
 from dataclasses import dataclass
-from aiohttp import ClientSession
-from bs4 import BeautifulSoup
-from typing import Optional
+
+import aiohttp
+import bs4
 
 
 @dataclass
@@ -10,7 +11,9 @@ class LyricsData:
     lyrics: str
 
 
-async def get_genius_lyrics(session: ClientSession, **params) -> Optional[LyricsData]:
+async def get_genius_lyrics(
+    session: aiohttp.ClientSession, **params
+) -> typing.Optional[LyricsData]:
     async with session.get("https://genius.com/api/search/song", params=params) as r:
         if not r.ok:
             return
@@ -30,7 +33,7 @@ async def get_genius_lyrics(session: ClientSession, **params) -> Optional[Lyrics
 
         text = await r.text()
 
-    soup = BeautifulSoup(text.replace("<br/>", "\n"), "lxml")
+    soup = bs4.BeautifulSoup(text.replace("<br/>", "\n"), "lxml")
     tags = soup.select("div[data-lyrics-container=true]")
 
     return LyricsData(

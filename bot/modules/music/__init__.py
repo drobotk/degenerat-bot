@@ -1,29 +1,15 @@
+import logging
+
 import discord
 from discord.ext import commands
 from discord import app_commands, ui
 
-import logging
-from urllib.parse import urlparse
+from ...bot import DegeneratBot
+from ... import utils
 
 from .queue import MusicQueueAudioSource, MusicQueueVoiceClient
 from .genius import get_genius_lyrics
 from .youtube import Youtube
-
-
-def is_url(x: str) -> bool:
-    try:
-        result = urlparse(x)
-        return all([result.scheme, result.netloc])
-
-    except:
-        return False
-
-
-def dots_after(inp: str, length: int) -> str:
-    if len(inp) <= length:
-        return inp
-
-    return inp[:97] + "..."
 
 
 class MusicControls(ui.View):
@@ -40,7 +26,7 @@ class MusicControls(ui.View):
         return True
 
     @ui.button(label="Pause/Resume", emoji="⏯️")
-    async def pause_resume(self, button: ui.Button, interaction: discord.Interaction):
+    async def pause_resume(self, interaction: discord.Interaction, button: ui.Button):
         if self.vc.is_paused():
             self.vc.resume()
         else:
@@ -49,18 +35,18 @@ class MusicControls(ui.View):
         await interaction.response.defer()
 
     @ui.button(label="Skip", emoji="⏭️")
-    async def skip(self, button: ui.Button, interaction: discord.Interaction):
+    async def skip(self, interaction: discord.Interaction, button: ui.Button):
         self.vc.stop()
         await interaction.response.defer()
 
     @ui.button(label="Stop", emoji="⏹️")
-    async def stop(self, button: ui.Button, interaction: discord.Interaction):
+    async def stop(self, interaction: discord.Interaction, button: ui.Button):
         self.vc.clear_entries()
         self.vc.stop()
         await interaction.response.defer()
 
     @ui.button(label="Disconnect", emoji="👋")
-    async def disconnect(self, button: ui.Button, interaction: discord.Interaction):
+    async def disconnect(self, interaction: discord.Interaction, button: ui.Button):
         await self.vc.disconnect()
         await interaction.response.defer()
 
@@ -72,8 +58,8 @@ class MusicControls(ui.View):
 
 
 class Music(commands.Cog, Youtube):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
         self.log = logging.getLogger(__name__)
         Youtube.__init__(self)
 
@@ -110,7 +96,7 @@ class Music(commands.Cog, Youtube):
             return []
 
         return [
-            app_commands.Choice(name=dots_after(r.title, 100), value=r.url)
+            app_commands.Choice(name=utils.dots_after(r.title, 100), value=r.url)
             for r in results
         ]
 
@@ -137,7 +123,7 @@ class Music(commands.Cog, Youtube):
         if url:
             await self.queue_youtube(interaction, vc, url)
 
-        elif is_url(q):
+        elif utils.is_url(q):
             e = discord.Embed(description=q, color=interaction.guild.me.color)
             e.title = "Odtwarzanie" if vc.is_standby else "Dodano do kolejki"
             msg = await interaction.followup.send(embed=e, wait=True)
@@ -317,7 +303,7 @@ class Music(commands.Cog, Youtube):
 
         for t in titles:
             self.log.debug(f'Fetching lyrics for "{t}"')
-            data = await get_genius_lyrics(self.bot.http._HTTPClient__session, q=t)
+            data = await get_genius_lyrics(self.bot.session, q=t)
             if data:
                 break
 
@@ -338,7 +324,7 @@ class Music(commands.Cog, Youtube):
             await interaction.channel.send(p)
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     cog = Music(bot)
 
     # ugly, i hate how these can't be in cogs

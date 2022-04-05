@@ -1,15 +1,17 @@
+import io
+
 import discord
 from discord.ext import commands
 from discord import app_commands
 
-import io
 from bs4 import BeautifulSoup
-from aiohttp import ClientSession
+
+from ..bot import DegeneratBot
 
 
 class Img(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
 
     def make_safe_filename(self, s):
         return "".join((c if c.isalnum() or c == "." else "_") for c in s)
@@ -20,8 +22,7 @@ class Img(commands.Cog):
         await interaction.response.defer()
 
         try:
-            session: ClientSession = self.bot.http._HTTPClient__session
-            async with session.get(
+            async with self.bot.session.get(
                 "https://www.google.com/search",
                 params={"tbm": "isch", "q": q},
                 headers={"User-Agent": "degenerat-bot/2137"},
@@ -38,7 +39,7 @@ class Img(commands.Cog):
             files = []
 
             for i, url in enumerate(img):
-                async with session.get(url) as r:
+                async with self.bot.session.get(url) as r:
                     if r.ok:
                         files.append(
                             discord.File(
@@ -59,7 +60,7 @@ class Img(commands.Cog):
             await interaction.followup.send(f"**Coś poszło nie tak:** {e}")
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     cog = Img(bot)
 
     # ugly, i hate how these can't be in cogs

@@ -1,13 +1,15 @@
+import time
+
 import discord
 from discord.ext import commands
 from discord import app_commands
 
-import time
+from ..bot import DegeneratBot
 
 
 class Status(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
         self.start_time = round(time.time())
 
     @app_commands.command(description="Status bota")
@@ -42,5 +44,5 @@ class Status(commands.Cog):
         await interaction.edit_original_message(content=None, embed=e)
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     await bot.add_cog(Status(bot))

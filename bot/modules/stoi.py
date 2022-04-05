@@ -1,16 +1,18 @@
+import os
+import logging
+
 import discord
 from discord.ext import commands
 from discord import app_commands
 
-import os
-import logging
 import asyncssh
-from aiohttp import ClientSession
+
+from ..bot import DegeneratBot
 
 
 class Stoi(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
         self.log = logging.getLogger(__name__)
         self.sshopts = asyncssh.SSHClientConnectionOptions(
             username=os.getenv("DEBIL_SSH_LOGIN"),
@@ -69,8 +71,7 @@ class Stoi(commands.Cog):
 
         typesToString = {1: "HTTP", 2: "Keyword", 3: "Ping", 4: "Port", 5: "Heartbeat"}
 
-        session: ClientSession = self.bot.http._HTTPClient__session
-        async with session.post(
+        async with self.bot.session.post(
             "https://api.uptimerobot.com/v2/getMonitors",
             data={"api_key": os.getenv("UPTIME_TOKEN"), "format": "json", "logs": "1"},
             headers={"cache-control": "no-cache"},
@@ -104,5 +105,5 @@ class Stoi(commands.Cog):
         await interaction.edit_original_message(embed=e)
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     await bot.add_cog(Stoi(bot))

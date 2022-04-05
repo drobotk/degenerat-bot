@@ -1,15 +1,18 @@
+import unicodedata
+
 import discord
 from discord.ext import commands
 from discord import app_commands
 
-import unicodedata
 import pyfiglet
+
+from ..bot import DegeneratBot
 
 
 class Figlet(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
-        self.fig = pyfiglet.Figlet()
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
+        self.fig: pyfiglet.Figlet = pyfiglet.Figlet()
 
     @app_commands.command(description="FIGlet bruh")
     @app_commands.describe(text="Tekst do wyfigletowania")
@@ -24,7 +27,7 @@ class Figlet(commands.Cog):
         await interaction.response.send_message(msg)
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     cog = Figlet(bot)
 
     # ugly, i hate how these can't be in cogs

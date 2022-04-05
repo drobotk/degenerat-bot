@@ -1,21 +1,23 @@
+import io
+
 import discord
 from discord.ext import commands
 from discord import app_commands
 
-import io
-from aiohttp import ClientSession
+from ..bot import DegeneratBot
 
 
 class Ryj(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
 
     @app_commands.command(description="Wysyła losowy ryj")
     async def ryj(self, interaction: discord.Interaction):
         await interaction.response.defer()
 
-        session: ClientSession = self.bot.http._HTTPClient__session
-        async with session.get("https://thispersondoesnotexist.com/image") as r:
+        async with self.bot.session.get(
+            "https://thispersondoesnotexist.com/image"
+        ) as r:
             if r.ok:
                 await interaction.followup.send(
                     file=discord.File(io.BytesIO(await r.read()), "ryj.jpg")
@@ -25,5 +27,5 @@ class Ryj(commands.Cog):
                 await interaction.followup.send("**Coś poszło nie tak**")
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     await bot.add_cog(Ryj(bot))

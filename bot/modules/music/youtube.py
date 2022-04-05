@@ -1,23 +1,17 @@
-import discord
-from discord.ext import commands
-
-import os
 import re
-import logging
 import json
-from yt_dlp import YoutubeDL
-from aiohttp import ClientSession
+import typing
+import pathlib
+import logging
 from dataclasses import dataclass
-from typing import Optional
 
+import discord
+
+from yt_dlp import YoutubeDL
+
+from ...bot import DegeneratBot
+from ... import utils
 from .queue import MusicQueueVoiceClient
-
-
-def sub_before(a: str, b: str, c: str = None) -> str:
-    idx = a.find(b)
-    if idx < 0:
-        return c or a
-    return a[:idx]
 
 
 @dataclass
@@ -31,7 +25,7 @@ class YoutubeVideo:
 
 
 class Youtube:
-    bot: commands.Bot
+    bot: DegeneratBot
 
     def __init__(self):
         params = {
@@ -51,6 +45,9 @@ class Youtube:
             r'{"videoRenderer":{"videoId":".+?"maxOneLine":false}]}}'
         )
 
+        self.download_path: str = f"./{__name__}/yt"
+        pathlib.Path(self.download_path).mkdir(parents=True, exist_ok=True)
+
     def format_selector(self, ctx: dict) -> list[dict]:
         formats = ctx["formats"]
         formats = [a for a in formats if a["acodec"] == "opus"]
@@ -61,13 +58,12 @@ class Youtube:
         formats.sort(key=lambda a: a["abr"])
         return [formats[-2]]
 
-    def extract_yt_url(self, text: str) -> Optional[str]:
+    def extract_yt_url(self, text: str) -> typing.Optional[str]:
         m = self.re_link.search(text)
         return f"https://www.youtube.com/watch?v={m.group(1)}" if m else None
 
     async def youtube_search(self, q: str, amount: int) -> list[YoutubeVideo]:
-        session: ClientSession = self.bot.http._HTTPClient__session
-        async with session.get(
+        async with self.bot.session.get(
             "https://www.youtube.com/results", params={"search_query": q}
         ) as r:
             if not r.ok:
@@ -92,7 +88,7 @@ class Youtube:
         return result
 
     def clean_title(self, t: str) -> str:
-        return sub_before(sub_before(t, " ["), " (")
+        return utils.sub_before(utils.sub_before(t, " ["), " (")
 
     async def queue_youtube(
         self, interaction: discord.Interaction, vc: MusicQueueVoiceClient, url: str
@@ -135,12 +131,7 @@ class Youtube:
         e.title = "Pobierańsko..."
         await reply(embed=e)
 
-        try:
-            os.mkdir("./yt")
-        except FileExistsError:
-            pass
-
-        filename = f"./yt/{self.ydl.prepare_filename(info)}"
+        filename = f"{self.download_path}/{self.ydl.prepare_filename(info)}"
         success, _ = await self.bot.loop.run_in_executor(
             None, lambda: self.ydl.dl(filename, info)
         )

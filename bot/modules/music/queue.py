@@ -1,7 +1,8 @@
+import logging
+import typing
+
 import discord
 from discord.ext import tasks
-
-import logging
 
 
 class MusicQueueAudioSource:
@@ -17,13 +18,16 @@ class MQFFmpegOpusAudio(MusicQueueAudioSource, discord.FFmpegOpusAudio):
     pass
 
 
+MusicQueueAudioSourceType = typing.Union[MQFFmpegPCMAudio, MQFFmpegOpusAudio]
+
+
 class MusicQueueVoiceClient(discord.VoiceClient):
     def __init__(self, client: discord.Client, channel: discord.abc.Connectable):
         super().__init__(client, channel)
 
         self.log = logging.getLogger(__name__)
 
-        self.entries: list[MusicQueueAudioSource] = []
+        self.entries: list[MusicQueueAudioSourceType] = []
         self.text_channel: discord.TextChannel = None
 
         self.update.start()

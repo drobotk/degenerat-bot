@@ -1,13 +1,15 @@
+import sys
+
 import discord
 from discord.ext import commands
 from discord import app_commands, utils
 
-import sys
+from ..bot import DegeneratBot
 
 
 class Info(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
 
     @app_commands.command(description="Info o bocie")
     async def info(self, interaction: discord.Interaction):
@@ -53,5 +55,5 @@ class Info(commands.Cog):
         await interaction.response.send_message(embed=e, view=view)
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     await bot.add_cog(Info(bot))

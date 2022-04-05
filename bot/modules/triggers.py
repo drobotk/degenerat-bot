@@ -1,12 +1,14 @@
+import re
+
 import discord
 from discord.ext import commands
 
-import re
+from ..bot import DegeneratBot
 
 
 class Triggers(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: DegeneratBot):
+        self.bot: DegeneratBot = bot
 
         self.triggers: dict[re.Pattern, str] = {}
         self.add_trigger(r"^sus$", "amogus")
@@ -97,5 +99,5 @@ class Triggers(commands.Cog):
         await message.reply(res, mention_author=False)
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: DegeneratBot):
     await bot.add_cog(Triggers(bot))
