@@ -53,7 +53,7 @@ class Stoi(commands.Cog):
         try:
             async with asyncssh.connect(
                 host=os.getenv("DEBIL_IP"),
-                port=int(os.getenv("DEBIL_SSH_PORT")),
+                port=int(os.getenv("DEBIL_SSH_PORT")),  # type: ignore
                 options=self.sshopts,
             ) as _:
                 e.color = discord.Colour.green()

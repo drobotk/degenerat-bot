@@ -1,3 +1,4 @@
+from __future__ import annotations
 from enum import Enum, auto
 
 import discord
@@ -5,6 +6,7 @@ from discord.ext import commands
 from discord import app_commands, ui
 
 from ..bot import DegeneratBot
+from .. import utils
 
 
 class TTTState(Enum):
@@ -15,6 +17,7 @@ class TTTState(Enum):
 
 
 class TTTGameView(ui.View):
+    children: list[TTTButton]
     message: discord.InteractionMessage
 
     header: str = "**--- Kółko i Krzyżyk ---**\n--- {} vs. {} ---\n\n"
@@ -26,7 +29,7 @@ class TTTGameView(ui.View):
     X: str = "❌"
     O: str = "⭕"
 
-    win_states: list[tuple[int]] = [
+    win_states: list[tuple[int, int, int]] = [
         # horizontal
         (0, 1, 2),
         (3, 4, 5),
@@ -81,8 +84,9 @@ class TTTGameView(ui.View):
         game.message = await interaction.original_message()
 
     def update_state(self) -> TTTState:
+        btns: list[TTTButton] = []
         for indices in self.win_states:
-            btns: list[TTTButton] = [self.children[i] for i in indices]
+            btns = [self.children[i] for i in indices]
             if all([b.label == self.X for b in btns]):
                 self.state = TTTState.XWon
                 break
@@ -154,6 +158,7 @@ class TicTacToe(commands.Cog):
 
     @app_commands.command(description="Gra w kółko i krzyżyk")
     @app_commands.describe(opponent="Twój przeciwnik")
+    @utils.guild_only()
     async def ttt(self, interaction: discord.Interaction, opponent: discord.User):
         await TTTGameView.send_game(interaction, interaction.user, opponent)
 
@@ -162,6 +167,7 @@ async def setup(bot: DegeneratBot):
     cog = TicTacToe(bot)
 
     @app_commands.context_menu(name="Zagraj w kółko i krzyżyk")
+    @utils.guild_only()
     async def ttt_context(interaction: discord.Interaction, opponent: discord.User):
         await TTTGameView.send_game(interaction, interaction.user, opponent)
 

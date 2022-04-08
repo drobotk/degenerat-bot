@@ -1,4 +1,5 @@
 import logging
+import typing
 
 import discord
 from discord.ext import commands
@@ -8,7 +9,7 @@ from ...bot import DegeneratBot
 from ... import utils
 
 from .queue import MusicQueueAudioSource, MusicQueueVoiceClient
-from .genius import get_genius_lyrics
+from .genius import get_genius_lyrics, LyricsData
 from .youtube import Youtube
 
 
@@ -103,6 +104,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.command(description="Odtwarza muzykę w twoim kanale głosowym")
     @app_commands.describe(q="Wyszukiwana fraza/URL")
     @app_commands.autocomplete(q=autocomplete_yt_search)
+    @utils.guild_only()
     async def play(self, interaction: discord.Interaction, q: str):
         if interaction.user.voice is None or interaction.user.voice.channel is None:
             await interaction.response.send_message(
@@ -161,6 +163,7 @@ class Music(commands.Cog, Youtube):
             await member.guild.change_voice_state(channel=after.channel, self_deaf=True)
 
     @app_commands.command(description="Rozłącza bota od kanału głosowego")
+    @utils.guild_only()
     async def disconnect(self, interaction: discord.Interaction):
         vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
@@ -171,6 +174,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":wave:")
 
     @app_commands.command(name="pause", description="Pauzuje odtwarzanie muzyki")
+    @utils.guild_only()
     async def pause(self, interaction: discord.Interaction):
         vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
@@ -181,6 +185,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(name="resume", description="Wznawia odtwarzanie muzyki")
+    @utils.guild_only()
     async def resume(self, interaction: discord.Interaction):
         vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
@@ -191,6 +196,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Zakańcza odtwarzanie muzyki i czyści kolejkę")
+    @utils.guild_only()
     async def stop(self, interaction: discord.Interaction):
         vc = interaction.guild.voice_client
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
@@ -202,6 +208,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Czyści kolejkę muzyki")
+    @utils.guild_only()
     async def clear(self, interaction: discord.Interaction):
         vc = interaction.guild.voice_client
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
@@ -212,6 +219,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Pomija aktualnie odtwarzany element kolejki")
+    @utils.guild_only()
     async def skip(self, interaction: discord.Interaction):
         vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
@@ -222,6 +230,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Wyświetla zawartość kolejki")
+    @utils.guild_only()
     async def queue(self, interaction: discord.Interaction):
         vc = interaction.guild.voice_client
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
@@ -248,6 +257,7 @@ class Music(commands.Cog, Youtube):
 
     @app_commands.command(description="Usuwa pozycję z kolejki muzyki")
     @app_commands.describe(num="Element kolejki")
+    @utils.guild_only()
     async def remove(self, interaction: discord.Interaction, num: int):
         vc = interaction.guild.voice_client
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
@@ -267,6 +277,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Panel sterowania muzyką")
+    @utils.guild_only()
     async def controls(self, interaction: discord.Interaction):
         vc = interaction.guild.voice_client
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
@@ -281,15 +292,20 @@ class Music(commands.Cog, Youtube):
         description="Pobiera tekst piosenki aktualnie odtwarzanej lub podanej"
     )
     @app_commands.describe(q="Wyszukiwana fraza")
-    async def lyrics(self, interaction: discord.Interaction, q: str = None):
-        titles = [q]
-        if not q:
+    async def lyrics(
+        self, interaction: discord.Interaction, q: typing.Optional[str] = None
+    ):
+        titles: list[str] = []
+        if q is not None:
+            titles.append(q)
+        elif interaction.guild is not None:
             vc = interaction.guild.voice_client
             if (
                 vc is not None
                 and isinstance(vc, MusicQueueVoiceClient)
                 and vc.source
                 and isinstance(vc.source, MusicQueueAudioSource)
+                and vc.source.titles is not None
             ):
                 titles = vc.source.titles
 
@@ -301,13 +317,14 @@ class Music(commands.Cog, Youtube):
 
         await interaction.response.defer()
 
+        data: typing.Optional[LyricsData] = None
         for t in titles:
             self.log.debug(f'Fetching lyrics for "{t}"')
             data = await get_genius_lyrics(self.bot.session, q=t)
-            if data:
+            if data is not None:
                 break
 
-        if not data:
+        if data is None:
             await interaction.followup.send("**Tekst piosenki niedostępny**")
             return
 
@@ -329,6 +346,7 @@ async def setup(bot: DegeneratBot):
 
     # ugly, i hate how these can't be in cogs
     @app_commands.context_menu(name="Dodaj do kolejki")
+    @utils.guild_only()
     async def play_context(interaction: discord.Interaction, message: discord.Message):
         if message.content:
             url = cog.extract_yt_url(message.content)

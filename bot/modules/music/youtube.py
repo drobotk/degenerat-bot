@@ -45,11 +45,11 @@ class Youtube:
             r'{"videoRenderer":{"videoId":".+?"maxOneLine":false}]}}'
         )
 
-        self.download_path: str = f"./{__name__}/yt"
+        self.download_path: str = f"./{__name__}/download"
         pathlib.Path(self.download_path).mkdir(parents=True, exist_ok=True)
 
     def format_selector(self, ctx: dict) -> list[dict]:
-        formats = ctx["formats"]
+        formats: list[dict] = ctx["formats"]
         formats = [a for a in formats if a["acodec"] == "opus"]
         if len(formats) <= 1:
             return formats
@@ -107,7 +107,7 @@ class Youtube:
                 None, lambda: self.ydl.extract_info(url, download=False)
             )
             title: str = info["title"]
-            filesize: str = info["filesize"]
+            filesize: int = info["filesize"]
             thumb: str = info["thumbnail"]
 
         except Exception as err:

@@ -34,7 +34,11 @@ class Img(commands.Cog):
 
             soup = BeautifulSoup(text, "lxml")
 
-            img = [x["src"] for x in soup.select("img")[1:4]]
+            img: list[str] = []
+            for x in soup.select("img")[1:]:
+                src = x["src"]
+                if isinstance(src, str):
+                    img.append(src)
 
             files = []
 

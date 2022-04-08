@@ -3,8 +3,5 @@
 *.pyc
 *.json
 *.code-workspace
-__pycache__/
 backup/
-pytube/
 bot/modules/_.py
-bot.modules.music.yt/

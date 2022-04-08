@@ -19,7 +19,11 @@ class Status(commands.Cog):
         end = time.perf_counter()
         res_time = end - start
 
-        e = discord.Embed(title="Status Bota", color=interaction.guild.me.color)
+        e = discord.Embed(title="Status Bota")
+
+        if interaction.guild is not None:
+            e.colour = interaction.guild.me.colour
+
         e.add_field(name="Uruchomiony", value=f"<t:{self.start_time}:R>", inline=False)
 
         e.add_field(
@@ -38,8 +42,6 @@ class Status(commands.Cog):
             value="\n".join([f":small_blue_diamond:{a}" for a in self.bot.cogs]),
             inline=False,
         )
-
-        e.set_footer(text="Degenerat Bot")
 
         await interaction.edit_original_message(content=None, embed=e)
 

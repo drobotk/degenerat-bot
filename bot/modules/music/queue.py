@@ -6,8 +6,8 @@ from discord.ext import tasks
 
 
 class MusicQueueAudioSource:
-    titles: list[str]
-    message: discord.Message
+    titles: typing.Optional[list[str]]
+    message: typing.Optional[discord.Message]
 
 
 class MQFFmpegPCMAudio(MusicQueueAudioSource, discord.FFmpegPCMAudio):
@@ -28,7 +28,7 @@ class MusicQueueVoiceClient(discord.VoiceClient):
         self.log = logging.getLogger(__name__)
 
         self.entries: list[MusicQueueAudioSourceType] = []
-        self.text_channel: discord.TextChannel = None
+        self.text_channel: typing.Optional[discord.TextChannel] = None
 
         self.update.start()
 
@@ -37,13 +37,13 @@ class MusicQueueVoiceClient(discord.VoiceClient):
         source: str,
         *,
         opus: bool,
-        titles: list[str] = None,
-        message: discord.Message = None,
+        titles: typing.Optional[list[str]] = None,
+        message: typing.Optional[discord.Message] = None,
     ) -> bool:
         if opus:
             entry = await MQFFmpegOpusAudio.from_probe(source)
         else:
-            entry = MQFFmpegPCMAudio(source)
+            entry = MQFFmpegPCMAudio(source)  # type: ignore  # idk why it complains here but doesnt above
 
         if not entry:
             return False
@@ -106,7 +106,7 @@ class MusicQueueVoiceClient(discord.VoiceClient):
         if not self.text_channel:
             self.text_channel = msg.channel
 
-        e = next.message.embeds[0]
+        e = msg.embeds[0]
         if e.title != "Odtwarzanie":
             e.title = "Odtwarzanie"
             if self.text_channel.last_message_id == msg.id:

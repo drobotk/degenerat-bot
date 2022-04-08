@@ -1,3 +1,5 @@
+import typing
+
 import discord
 from discord.ext import commands
 from discord import app_commands, ui
@@ -90,16 +92,17 @@ def text_to_emojis(text: str) -> list[str]:
     while text:
         r = 1  # number of chars consumed (for combos)
 
+        e: typing.Optional[str] = None
         for i in [3, 2, 1]:
             s = l_to_e.get(text[:i], ())
             e = next(
                 (x for x in s if x not in out), None
             )  # get first element of tuple that isnt in out, None if all already are
-            if e:
+            if e is not None:
                 r = i
                 break
 
-        if not e:
+        if e is None:
             return []
 
         out.append(e)
@@ -122,15 +125,19 @@ class React(commands.Cog):
         if not ctx.message.reference:
             return
 
-        tid = ctx.message.reference.message_id
-        await ctx.message.delete()
-        target = await ctx.channel.fetch_message(tid)
+        target = discord.PartialMessage(
+            channel=ctx.channel, id=ctx.message.reference.message_id
+        )
+
+        if ctx.guild is not None:
+            await ctx.message.delete()
 
         out = text_to_emojis(text)
         if not out:
             return False
 
-        await target.clear_reactions()
+        if ctx.guild is not None:  # can't clear reactions in DMs
+            await target.clear_reactions()
 
         for x in out:
             await target.add_reaction(x)
@@ -146,14 +153,14 @@ class ReactionModal(ui.Modal):
     async def on_submit(self, interaction: discord.Interaction):
         out = text_to_emojis(self.text.value)
         if not out:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "**Błąd: nie da się dodać takiej reakcji**", ephemeral=True
             )
-            return
 
         await interaction.response.defer()
 
-        await self.target.clear_reactions()
+        if interaction.guild is not None:  # can't clear reactions in DMs
+            await self.target.clear_reactions()
 
         for x in out:
             await self.target.add_reaction(x)
@@ -162,8 +169,7 @@ class ReactionModal(ui.Modal):
 # i hate how these can't be in cogs
 @app_commands.context_menu(name="Dodaj reakcje")
 async def react_context(interaction: discord.Interaction, message: discord.Message):
-    modal = ReactionModal(message)
-    await interaction.response.send_modal(modal)
+    await interaction.response.send_modal(ReactionModal(message))
 
 
 async def setup(bot: DegeneratBot):

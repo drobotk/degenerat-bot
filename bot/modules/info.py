@@ -13,22 +13,23 @@ class Info(commands.Cog):
 
     @app_commands.command(description="Info o bocie")
     async def info(self, interaction: discord.Interaction):
-        e = discord.Embed(colour=interaction.guild.me.colour)
+        e = discord.Embed()
 
-        avatar = (
-            interaction.guild.me.avatar.url if interaction.guild.me.avatar else None
-        )
+        if interaction.guild is not None:
+            e.colour = interaction.guild.me.colour
+
+        avatar = self.bot.user.avatar.url if self.bot.user.avatar else None
         e.set_author(name=str(self.bot.user), icon_url=avatar)
 
         e.add_field(name="Stworzony przez", value="RoboT#2675", inline=False)
-        e.add_field(name="Serwery", value=str(len(self.bot.guilds)))
+        e.add_field(name="Serwery", value=len(self.bot.guilds))
 
         cmds = [
             c
             for c in self.bot.tree._global_commands.values()
             if isinstance(c, app_commands.Command)
         ]
-        e.add_field(name="Komendy", value=str(len(cmds)))
+        e.add_field(name="Komendy", value=len(cmds))
 
         e.add_field(name="Hosting", value="Heroku", inline=False)
         e.add_field(name="Python", value=sys.version, inline=False)
