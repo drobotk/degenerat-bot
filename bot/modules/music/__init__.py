@@ -90,6 +90,13 @@ class Music(commands.Cog, Youtube):
     async def autocomplete_yt_search(
         self, interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[str]]:
+        if interaction.guild is None:
+            return [
+                app_commands.Choice(
+                    name="Ta komenda działa tylko na serwerach", value="_"
+                )
+            ]
+
         if (
             not current
             or current.startswith("http://")
@@ -260,6 +267,13 @@ class Music(commands.Cog, Youtube):
     async def autocomplete_queue_remove(
         self, interaction: discord.Interaction, current: int
     ) -> list[app_commands.Choice[int]]:
+        if interaction.guild is None:
+            return [
+                app_commands.Choice(
+                    name="Ta komenda działa tylko na serwerach", value=0
+                )
+            ]
+
         vc = interaction.guild.voice_client
         if not vc or not isinstance(vc, MusicQueueVoiceClient) or len(vc.entries) == 0:
             return []
