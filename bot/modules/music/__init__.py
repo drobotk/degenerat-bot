@@ -41,7 +41,7 @@ class MusicControls(ui.View):
         await interaction.response.defer()
 
     @ui.button(label="Stop", emoji="⏹️")
-    async def stop(self, interaction: discord.Interaction, button: ui.Button):
+    async def _stop(self, interaction: discord.Interaction, button: ui.Button):
         self.vc.clear_entries()
         self.vc.stop()
         await interaction.response.defer()
@@ -49,7 +49,12 @@ class MusicControls(ui.View):
     @ui.button(label="Disconnect", emoji="👋")
     async def disconnect(self, interaction: discord.Interaction, button: ui.Button):
         await self.vc.disconnect()
-        await interaction.response.defer()
+
+        for c in self.children:
+            c.disabled = True
+
+        await interaction.response.edit_message(view=self)
+        self.stop()
 
     async def on_timeout(self):
         for c in self.children:
@@ -61,7 +66,7 @@ class MusicControls(ui.View):
 class Music(commands.Cog, Youtube):
     def __init__(self, bot: DegeneratBot):
         self.bot: DegeneratBot = bot
-        self.log = logging.getLogger(__name__)
+        self.log: logging.Logger = logging.getLogger(__name__)
         Youtube.__init__(self)
 
     async def get_client_for_channels(
@@ -107,17 +112,15 @@ class Music(commands.Cog, Youtube):
     @utils.guild_only()
     async def play(self, interaction: discord.Interaction, q: str):
         if interaction.user.voice is None or interaction.user.voice.channel is None:
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "**Musisz być połączony z kanałem głosowym**", ephemeral=True
             )
-            return
 
         vc = await self.get_client_for_channels(
             interaction.user.voice.channel, interaction.channel
         )
         if not vc:
-            await interaction.response.send_message("**Nie udało się połączyć**")
-            return
+            return await interaction.response.send_message("**Nie udało się połączyć**")
 
         await interaction.response.defer()
 
@@ -144,8 +147,7 @@ class Music(commands.Cog, Youtube):
                     description=f"Brak wyników wyszukiwania dla: `{q}`",
                     color=discord.Colour.red(),
                 )
-                await interaction.edit_original_message(embed=e)
-                return
+                return await interaction.edit_original_message(embed=e)
 
             await self.queue_youtube(interaction, vc, results[0].url)
 
@@ -255,8 +257,31 @@ class Music(commands.Cog, Youtube):
 
         await interaction.response.send_message(embed=embed)
 
+    async def autocomplete_queue_remove(
+        self, interaction: discord.Interaction, current: int
+    ) -> list[app_commands.Choice[int]]:
+        vc = interaction.guild.voice_client
+        if not vc or not isinstance(vc, MusicQueueVoiceClient) or len(vc.entries) == 0:
+            return []
+
+        choices: list[app_commands.Choice[int]] = []
+
+        for i, entry in enumerate(vc.entries, 1):
+            if not str(i).startswith(str(current)):
+                continue
+
+            title = entry.titles[0] if entry.titles else "Nieznany"
+            name = utils.dots_after(f"#{i} | {title}", 100)
+            choices.append(app_commands.Choice(name=name, value=i))
+
+            if len(choices) == 25:
+                break
+
+        return choices
+
     @app_commands.command(description="Usuwa pozycję z kolejki muzyki")
     @app_commands.describe(num="Element kolejki")
+    @app_commands.autocomplete(num=autocomplete_queue_remove)
     @utils.guild_only()
     async def remove(self, interaction: discord.Interaction, num: int):
         vc = interaction.guild.voice_client

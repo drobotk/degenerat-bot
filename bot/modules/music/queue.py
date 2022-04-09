@@ -90,7 +90,7 @@ class MusicQueueVoiceClient(discord.VoiceClient):
 
             return
 
-        if self.is_playing():
+        if self.is_playing() or self.is_paused():
             return
 
         next = self.entries.pop(0)
