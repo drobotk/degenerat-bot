@@ -40,6 +40,9 @@ class Img(commands.Cog):
                 if isinstance(src, str):
                     img.append(src)
 
+                if len(img) >= 3:
+                    break
+
             files = []
 
             for i, url in enumerate(img):
