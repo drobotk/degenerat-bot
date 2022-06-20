@@ -11,7 +11,7 @@ def main():
     )
 
     bot = DegeneratBot()
-    bot.run(os.getenv("DISCORD_TOKEN"))
+    bot.run(os.getenv("DISCORD_TOKEN"), log_handler=None)
 
 
 if __name__ == "__main__":

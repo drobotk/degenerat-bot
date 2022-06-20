@@ -28,13 +28,3 @@ def sub_before(a: str, b: str, c: typing.Optional[str] = None) -> str:
         return c or a
 
     return a[:idx]
-
-
-def guild_only():
-    def predicate(interaction: discord.Interaction) -> bool:
-        if interaction.guild is None:
-            raise app_commands.NoPrivateMessage
-
-        return True
-
-    return app_commands.check(predicate)

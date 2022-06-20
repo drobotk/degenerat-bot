@@ -1,10 +1,8 @@
 import os
 import logging
-import typing
 
 import discord
 from discord.ext import commands
-from discord import app_commands
 
 import aiohttp
 
@@ -22,9 +20,7 @@ class DegeneratBot(commands.Bot):
             messages=True,
             message_content=True,
         )
-        super().__init__(
-            command_prefix=",", help_command=None, intents=intents, tree_cls=MyTree
-        )
+        super().__init__(command_prefix=",", help_command=None, intents=intents)
 
     async def setup_hook(self) -> None:
         self.session: aiohttp.ClientSession = aiohttp.ClientSession()
@@ -46,23 +42,3 @@ class DegeneratBot(commands.Bot):
 
     async def on_ready(self) -> None:
         self.log.info(f'Ready as "{self.user}"')
-
-
-class MyTree(app_commands.CommandTree[DegeneratBot]):
-    async def on_error(
-        self,
-        interaction: discord.Interaction,
-        command: typing.Optional[
-            typing.Union[app_commands.ContextMenu, app_commands.Command]
-        ],
-        error: app_commands.AppCommandError,
-    ):
-        if isinstance(error, app_commands.CommandNotFound):
-            return self.client.log.error(f"{error.__class__.__name__}: {str(error)}")
-
-        if isinstance(error, app_commands.NoPrivateMessage):
-            return await interaction.response.send_message(
-                "**Ta komenda działa tylko na serwerach**", ephemeral=True
-            )
-
-        await super().on_error(interaction, command, error)

@@ -28,10 +28,12 @@ class Youtube:
     bot: DegeneratBot
 
     def __init__(self):
+        self.log: logging.Logger = logging.getLogger(__name__)
+
         params = {
             "no_color": True,
             "format": self.format_selector,
-            "logger": logging.getLogger(__name__),
+            "logger": self.log,
         }
         self.ydl = YoutubeDL(params)
 
@@ -42,7 +44,7 @@ class Youtube:
         )
 
         self.re_search_results = re.compile(
-            r'{"videoRenderer":{"videoId":".+?"maxOneLine":false}]}}'
+            r'{"videoRenderer":{"videoId":".+?"}]},"maxOneLine":false}],"searchVideoResultEntityKey":"[A-Za-z0-9]+?"}}'
         )
 
         self.download_path: str = f"./{__name__}/download"

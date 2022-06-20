@@ -90,13 +90,6 @@ class Music(commands.Cog, Youtube):
     async def autocomplete_yt_search(
         self, interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[str]]:
-        if interaction.guild is None:
-            return [
-                app_commands.Choice(
-                    name="Ta komenda działa tylko na serwerach", value="_"
-                )
-            ]
-
         if (
             not current
             or current.startswith("http://")
@@ -104,7 +97,7 @@ class Music(commands.Cog, Youtube):
         ):
             return []
 
-        results = await self.youtube_search(current, 10)
+        results = await self.youtube_search(current, 25)
         if not results:
             return []
 
@@ -116,7 +109,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.command(description="Odtwarza muzykę w twoim kanale głosowym")
     @app_commands.describe(q="Wyszukiwana fraza/URL")
     @app_commands.autocomplete(q=autocomplete_yt_search)
-    @utils.guild_only()
+    @app_commands.guild_only
     async def play(self, interaction: discord.Interaction, q: str):
         if interaction.user.voice is None or interaction.user.voice.channel is None:
             return await interaction.response.send_message(
@@ -172,7 +165,7 @@ class Music(commands.Cog, Youtube):
             await member.guild.change_voice_state(channel=after.channel, self_deaf=True)
 
     @app_commands.command(description="Rozłącza bota od kanału głosowego")
-    @utils.guild_only()
+    @app_commands.guild_only
     async def disconnect(self, interaction: discord.Interaction):
         vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
@@ -183,7 +176,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":wave:")
 
     @app_commands.command(name="pause", description="Pauzuje odtwarzanie muzyki")
-    @utils.guild_only()
+    @app_commands.guild_only
     async def pause(self, interaction: discord.Interaction):
         vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
@@ -194,7 +187,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(name="resume", description="Wznawia odtwarzanie muzyki")
-    @utils.guild_only()
+    @app_commands.guild_only
     async def resume(self, interaction: discord.Interaction):
         vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
@@ -205,7 +198,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Zakańcza odtwarzanie muzyki i czyści kolejkę")
-    @utils.guild_only()
+    @app_commands.guild_only
     async def stop(self, interaction: discord.Interaction):
         vc = interaction.guild.voice_client
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
@@ -217,7 +210,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Czyści kolejkę muzyki")
-    @utils.guild_only()
+    @app_commands.guild_only
     async def clear(self, interaction: discord.Interaction):
         vc = interaction.guild.voice_client
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
@@ -228,7 +221,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Pomija aktualnie odtwarzany element kolejki")
-    @utils.guild_only()
+    @app_commands.guild_only
     async def skip(self, interaction: discord.Interaction):
         vc: discord.VoiceClient = interaction.guild.voice_client
         if not vc:
@@ -239,7 +232,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Wyświetla zawartość kolejki")
-    @utils.guild_only()
+    @app_commands.guild_only
     async def queue(self, interaction: discord.Interaction):
         vc = interaction.guild.voice_client
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
@@ -296,7 +289,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.command(description="Usuwa pozycję z kolejki muzyki")
     @app_commands.describe(num="Element kolejki")
     @app_commands.autocomplete(num=autocomplete_queue_remove)
-    @utils.guild_only()
+    @app_commands.guild_only
     async def remove(self, interaction: discord.Interaction, num: int):
         vc = interaction.guild.voice_client
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
@@ -316,7 +309,7 @@ class Music(commands.Cog, Youtube):
         await interaction.response.send_message(":ok_hand:")
 
     @app_commands.command(description="Panel sterowania muzyką")
-    @utils.guild_only()
+    @app_commands.guild_only
     async def controls(self, interaction: discord.Interaction):
         vc = interaction.guild.voice_client
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
@@ -385,7 +378,7 @@ async def setup(bot: DegeneratBot):
 
     # ugly, i hate how these can't be in cogs
     @app_commands.context_menu(name="Dodaj do kolejki")
-    @utils.guild_only()
+    @app_commands.guild_only
     async def play_context(interaction: discord.Interaction, message: discord.Message):
         if message.content:
             url = cog.extract_yt_url(message.content)

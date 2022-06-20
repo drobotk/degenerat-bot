@@ -158,7 +158,7 @@ class TicTacToe(commands.Cog):
 
     @app_commands.command(description="Gra w kółko i krzyżyk")
     @app_commands.describe(opponent="Twój przeciwnik")
-    @utils.guild_only()
+    @app_commands.guild_only
     async def ttt(self, interaction: discord.Interaction, opponent: discord.User):
         await TTTGameView.send_game(interaction, interaction.user, opponent)
 
@@ -167,7 +167,7 @@ async def setup(bot: DegeneratBot):
     cog = TicTacToe(bot)
 
     @app_commands.context_menu(name="Zagraj w kółko i krzyżyk")
-    @utils.guild_only()
+    @app_commands.guild_only
     async def ttt_context(interaction: discord.Interaction, opponent: discord.User):
         await TTTGameView.send_game(interaction, interaction.user, opponent)
 
