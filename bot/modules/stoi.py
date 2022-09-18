@@ -19,6 +19,7 @@ class Stoi(commands.Cog):
             password=os.getenv("DEBIL_SSH_PASSWD"),
             known_hosts=None,
             login_timeout=5,
+            connect_timeout=5,
         )
 
     def get_duration_str(self, seconds: int) -> str:
