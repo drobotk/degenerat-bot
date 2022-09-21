@@ -102,7 +102,7 @@ class Stoi(commands.Cog):
 
         e.description = "_ _"
 
-        await interaction.edit_original_message(embed=e)
+        await interaction.edit_original_response(embed=e)
 
 
 async def setup(bot: DegeneratBot):

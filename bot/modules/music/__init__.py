@@ -147,7 +147,7 @@ class Music(commands.Cog, Youtube):
                     description=f"Brak wyników wyszukiwania dla: `{q}`",
                     color=discord.Colour.red(),
                 )
-                return await interaction.edit_original_message(embed=e)
+                return await interaction.edit_original_response(embed=e)
 
             await self.queue_youtube(interaction, vc, results[0].url)
 

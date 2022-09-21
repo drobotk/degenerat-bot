@@ -43,7 +43,7 @@ class Status(commands.Cog):
             inline=False,
         )
 
-        await interaction.edit_original_message(content=None, embed=e)
+        await interaction.edit_original_response(content=None, embed=e)
 
 
 async def setup(bot: DegeneratBot):

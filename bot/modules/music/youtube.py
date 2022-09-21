@@ -140,7 +140,7 @@ class Youtube:
         if not success:
             e.title = "**Wystąpił błąd podczas pobierania pliku**"
             e.color = discord.Colour.red()
-            await interaction.edit_original_message(embed=e)
+            await interaction.edit_original_response(embed=e)
             return
 
         titles = []
@@ -158,6 +158,6 @@ class Youtube:
         titles = list(dict.fromkeys([self.clean_title(t) for t in titles]))
 
         e.title = "Odtwarzanie" if vc.is_standby else "Dodano do kolejki"
-        msg = await interaction.edit_original_message(embed=e)
+        msg = await interaction.edit_original_response(embed=e)
 
         await vc.add_entry(filename, opus=True, titles=titles, message=msg)
