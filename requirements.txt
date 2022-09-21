@@ -1,5 +1,5 @@
-git+https://github.com/Rapptz/discord.py
-git+https://github.com/Gorialis/jishaku
+discord.py
+jishaku
 git+https://github.com/yt-dlp/yt-dlp
 async_property
 aiohttp
