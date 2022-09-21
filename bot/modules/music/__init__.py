@@ -318,7 +318,7 @@ class Music(commands.Cog, Youtube):
 
         view = MusicControls(timeout=300)
         await interaction.response.send_message(view=view)
-        view.message = await interaction.original_message()
+        view.message = await interaction.original_response()
 
     @app_commands.command(
         description="Pobiera tekst piosenki aktualnie odtwarzanej lub podanej"

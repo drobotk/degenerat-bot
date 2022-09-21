@@ -81,7 +81,7 @@ class TTTGameView(ui.View):
             player1.mention, player2.mention
         ) + cls.gameplay.format(player1.mention)
         await interaction.response.send_message(text, view=game)
-        game.message = await interaction.original_message()
+        game.message = await interaction.original_response()
 
     def update_state(self) -> TTTState:
         btns: list[TTTButton] = []
