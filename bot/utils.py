@@ -1,10 +1,6 @@
 import typing
 from urllib.parse import urlparse
 
-import discord
-from discord.ext import commands
-from discord import app_commands
-
 
 def is_url(x: str) -> bool:
     try:
