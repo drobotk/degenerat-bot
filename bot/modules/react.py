@@ -154,7 +154,7 @@ class ReactionModal(ui.Modal):
         out = text_to_emojis(self.text.value)
         if not out:
             return await interaction.response.send_message(
-                "**Błąd: nie da się dodać takiej reakcji**", ephemeral=True
+                "**Błąd: nie da się dodać takiej reakcji (i parasola w dupie otworzyć)**", ephemeral=True
             )
 
         await interaction.response.defer()
