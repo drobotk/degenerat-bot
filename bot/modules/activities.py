@@ -19,7 +19,7 @@ class Activities(commands.Cog):
                 type=discord.ActivityType.watching, name="niemieckie porno"
             ),
             discord.Activity(
-                type=discord.ActivityType.watching, name="mcskelli.tk/item4.html"
+                type=discord.ActivityType.watching, name="piotrovice.cf/item4.html"
             ),
             discord.Activity(
                 type=discord.ActivityType.watching, name="fish spinning for 68 years"
