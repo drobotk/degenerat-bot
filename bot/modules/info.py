@@ -31,7 +31,7 @@ class Info(commands.Cog):
         ]
         e.add_field(name="Komendy", value=len(cmds))
 
-        e.add_field(name="Hosting", value="Heroku", inline=False)
+        e.add_field(name="Hosting", value="Debil@Piotrovice", inline=False)
         e.add_field(name="Python", value=sys.version, inline=False)
         e.add_field(name="discord.py", value=discord.__version__, inline=False)
 
