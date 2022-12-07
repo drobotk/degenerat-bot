@@ -1,6 +1,12 @@
 import os
 import logging
 
+try:
+    import dotenv # type: ignore
+    dotenv.load_dotenv()
+except:
+    pass
+
 from bot import DegeneratBot
 
 
