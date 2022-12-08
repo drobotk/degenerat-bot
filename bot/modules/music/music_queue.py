@@ -103,8 +103,11 @@ class MusicQueueVoiceClient(discord.VoiceClient):
         if not msg or not msg.embeds:
             return
 
+        if not self.text_channel and isinstance(msg.channel, discord.TextChannel):
+            self.text_channel = msg.channel  # type: ignore (Type "MessageableChannel" cannot be assigned to type "TextChannel | None"  - won't bother)
+
         if not self.text_channel:
-            self.text_channel = msg.channel
+            return
 
         e = msg.embeds[0]
         if e.title != "Odtwarzanie":

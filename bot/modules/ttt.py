@@ -1,5 +1,6 @@
 from __future__ import annotations
 from enum import Enum, auto
+from typing import Union
 
 import discord
 from discord.ext import commands
@@ -43,7 +44,11 @@ class TTTGameView(ui.View):
         (2, 4, 6),
     ]
 
-    def __init__(self, player1: discord.User, player2: discord.User):
+    def __init__(
+        self,
+        player1: Union[discord.User, discord.Member],
+        player2: Union[discord.User, discord.Member],
+    ):
         super().__init__(timeout=300)
         for i in range(9):
             self.add_item(
@@ -66,15 +71,15 @@ class TTTGameView(ui.View):
         await self.message.edit(content=text, view=self)
 
     @property
-    def current_move(self) -> discord.User:
+    def current_move(self) -> Union[discord.User, discord.Member]:
         return self.players[self.moves % 2]
 
     @classmethod
     async def send_game(
         cls,
         interaction: discord.Interaction,
-        player1: discord.User,
-        player2: discord.User,
+        player1: Union[discord.User, discord.Member],
+        player2: Union[discord.User, discord.Member],
     ):
         game = cls(player1, player2)
         text = cls.header.format(

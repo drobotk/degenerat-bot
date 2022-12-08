@@ -89,7 +89,7 @@ class Triggers(commands.Cog):
         if message.author.bot or not message.content:
             return
 
-        if message.content.startswith(self.bot.command_prefix):
+        if message.content.startswith(self.bot.command_prefix):  # type: ignore (error: Argument of type "PrefixType[BotT@__init__]" cannot be assigned to parameter "__prefix" of type "str | tuple[str, ...]" in function "startswith"  - bruh)
             return
 
         res = self.check_triggers(message.content.lower())

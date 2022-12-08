@@ -11,7 +11,7 @@ from yt_dlp import YoutubeDL
 
 from ...bot import DegeneratBot
 from ... import utils
-from .queue import MusicQueueVoiceClient
+from .music_queue import MusicQueueVoiceClient
 
 
 @dataclass
@@ -101,7 +101,7 @@ class Youtube:
             else interaction.followup.send
         )
 
-        e = discord.Embed(color=interaction.guild.me.color)
+        e = discord.Embed(color=interaction.guild.me.color)  # type: ignore (command is guild only, guild can't be None here)
         e.set_footer(text=url)
 
         try:

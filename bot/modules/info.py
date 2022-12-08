@@ -18,7 +18,7 @@ class Info(commands.Cog):
         if interaction.guild is not None:
             e.colour = interaction.guild.me.colour
 
-        avatar = self.bot.user.avatar.url if self.bot.user.avatar else None
+        avatar = self.bot.user.avatar.url if self.bot.user.avatar else None  # type: ignore (bot.user will never be None here)
         e.set_author(name=str(self.bot.user), icon_url=avatar)
 
         e.add_field(name="Stworzony przez", value="RoboT#2675", inline=False)
@@ -45,7 +45,7 @@ class Info(commands.Cog):
         permissions: str = install_params.get("permissions")
 
         invite_url = utils.oauth_url(
-            self.bot.user.id,
+            self.bot.user.id,  # type: ignore (bot.user will never be None here)
             permissions=discord.Permissions(int(permissions)),
             scopes=scopes,
         )

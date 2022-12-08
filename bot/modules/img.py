@@ -74,7 +74,7 @@ async def setup(bot: DegeneratBot):
     @app_commands.context_menu(name="Image Search")
     async def img_context(interaction: discord.Interaction, message: discord.Message):
         if message.content:
-            await cog.img.callback(cog, interaction, message.content)
+            await cog.img.callback(cog, interaction, message.content)  # type: ignore (Expected 2 positional arguments - type checker bug?)
         else:
             await interaction.response.send_message(
                 "**Błąd: Wiadomość bez treści**", ephemeral=True

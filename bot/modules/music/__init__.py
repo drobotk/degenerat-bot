@@ -8,7 +8,7 @@ from discord import app_commands, ui
 from ...bot import DegeneratBot
 from ... import utils
 
-from .queue import MusicQueueAudioSource, MusicQueueVoiceClient
+from .music_queue import MusicQueueAudioSource, MusicQueueVoiceClient
 from .genius import get_genius_lyrics, LyricsData
 from .youtube import Youtube
 
@@ -19,7 +19,7 @@ class MusicControls(ui.View):
     vc: MusicQueueVoiceClient
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        self.vc = interaction.guild.voice_client
+        self.vc = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
         if not self.vc or not isinstance(self.vc, MusicQueueVoiceClient):
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return False
@@ -74,7 +74,7 @@ class Music(commands.Cog, Youtube):
     ) -> MusicQueueVoiceClient:
         vc = voice_channel.guild.voice_client
         if vc is not None and not isinstance(vc, MusicQueueVoiceClient):
-            await vc.disconnect()
+            await vc.disconnect(force=False)
             vc = None
 
         if vc is None:
@@ -111,13 +111,13 @@ class Music(commands.Cog, Youtube):
     @app_commands.autocomplete(q=autocomplete_yt_search)
     @app_commands.guild_only
     async def play(self, interaction: discord.Interaction, q: str):
-        if interaction.user.voice is None or interaction.user.voice.channel is None:
+        if interaction.user.voice is None or interaction.user.voice.channel is None:  # type: ignore (command is guild only, user will always be a Member here)
             return await interaction.response.send_message(
                 "**Musisz być połączony z kanałem głosowym**", ephemeral=True
             )
 
         vc = await self.get_client_for_channels(
-            interaction.user.voice.channel, interaction.channel
+            interaction.user.voice.channel, interaction.channel  # type: ignore (command is guild only, user will always be a Member here; channel will never be None here)
         )
         if not vc:
             return await interaction.response.send_message("**Nie udało się połączyć**")
@@ -129,7 +129,7 @@ class Music(commands.Cog, Youtube):
             await self.queue_youtube(interaction, vc, url)
 
         elif utils.is_url(q):
-            e = discord.Embed(description=q, color=interaction.guild.me.color)
+            e = discord.Embed(description=q, color=interaction.guild.me.color)  # type: ignore (command is guild only, guild can't be None here)
             e.title = "Odtwarzanie" if vc.is_standby else "Dodano do kolejki"
             msg = await interaction.followup.send(embed=e, wait=True)
 
@@ -137,7 +137,7 @@ class Music(commands.Cog, Youtube):
 
         else:  # Search query
             e = discord.Embed(
-                description=f"Wyszukiwanie `{q}`...", color=interaction.guild.me.color
+                description=f"Wyszukiwanie `{q}`...", color=interaction.guild.me.color  # type: ignore (command is guild only, guild can't be None here)
             )
             interaction.message = await interaction.followup.send(embed=e, wait=True)
 
@@ -167,7 +167,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.command(description="Rozłącza bota od kanału głosowego")
     @app_commands.guild_only
     async def disconnect(self, interaction: discord.Interaction):
-        vc: discord.VoiceClient = interaction.guild.voice_client
+        vc: discord.VoiceClient = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
         if not vc:
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -178,7 +178,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.command(name="pause", description="Pauzuje odtwarzanie muzyki")
     @app_commands.guild_only
     async def pause(self, interaction: discord.Interaction):
-        vc: discord.VoiceClient = interaction.guild.voice_client
+        vc: discord.VoiceClient = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
         if not vc:
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -189,7 +189,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.command(name="resume", description="Wznawia odtwarzanie muzyki")
     @app_commands.guild_only
     async def resume(self, interaction: discord.Interaction):
-        vc: discord.VoiceClient = interaction.guild.voice_client
+        vc: discord.VoiceClient = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
         if not vc:
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -200,7 +200,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.command(description="Zakańcza odtwarzanie muzyki i czyści kolejkę")
     @app_commands.guild_only
     async def stop(self, interaction: discord.Interaction):
-        vc = interaction.guild.voice_client
+        vc = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -212,7 +212,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.command(description="Czyści kolejkę muzyki")
     @app_commands.guild_only
     async def clear(self, interaction: discord.Interaction):
-        vc = interaction.guild.voice_client
+        vc = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -223,7 +223,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.command(description="Pomija aktualnie odtwarzany element kolejki")
     @app_commands.guild_only
     async def skip(self, interaction: discord.Interaction):
-        vc: discord.VoiceClient = interaction.guild.voice_client
+        vc: discord.VoiceClient = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
         if not vc:
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -234,7 +234,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.command(description="Wyświetla zawartość kolejki")
     @app_commands.guild_only
     async def queue(self, interaction: discord.Interaction):
-        vc = interaction.guild.voice_client
+        vc = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -243,7 +243,7 @@ class Music(commands.Cog, Youtube):
             await interaction.response.send_message("**Kolejka jest pusta**")
             return
 
-        embed = discord.Embed(title="Kolejka", color=interaction.guild.me.color)
+        embed = discord.Embed(title="Kolejka", color=interaction.guild.me.color)  # type: ignore (command is guild only, guild can't be None here)
 
         nums = []
         titles = []
@@ -260,14 +260,7 @@ class Music(commands.Cog, Youtube):
     async def autocomplete_queue_remove(
         self, interaction: discord.Interaction, current: int
     ) -> list[app_commands.Choice[int]]:
-        if interaction.guild is None:
-            return [
-                app_commands.Choice(
-                    name="Ta komenda działa tylko na serwerach", value=0
-                )
-            ]
-
-        vc = interaction.guild.voice_client
+        vc = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
         if not vc or not isinstance(vc, MusicQueueVoiceClient) or len(vc.entries) == 0:
             return []
 
@@ -291,7 +284,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.autocomplete(num=autocomplete_queue_remove)
     @app_commands.guild_only
     async def remove(self, interaction: discord.Interaction, num: int):
-        vc = interaction.guild.voice_client
+        vc = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -311,7 +304,7 @@ class Music(commands.Cog, Youtube):
     @app_commands.command(description="Panel sterowania muzyką")
     @app_commands.guild_only
     async def controls(self, interaction: discord.Interaction):
-        vc = interaction.guild.voice_client
+        vc = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
         if not vc or not isinstance(vc, MusicQueueVoiceClient):
             await interaction.response.send_message("**Nie połączono**", ephemeral=True)
             return
@@ -370,7 +363,7 @@ class Music(commands.Cog, Youtube):
 
         # remaining pages get sent normally
         for p in pages[1:]:
-            await interaction.channel.send(p)
+            await interaction.channel.send(p)  # type: ignore (channel will be messageable here)
 
 
 async def setup(bot: DegeneratBot):
@@ -382,7 +375,7 @@ async def setup(bot: DegeneratBot):
     async def play_context(interaction: discord.Interaction, message: discord.Message):
         if message.content:
             url = cog.extract_yt_url(message.content)
-            await cog.play.callback(cog, interaction, url or message.content)
+            await cog.play.callback(cog, interaction, url or message.content)  # type: ignore (Expected 2 positional arguments - type checker bug?)
 
         elif message.embeds:
             e = message.embeds[0]
@@ -390,10 +383,10 @@ async def setup(bot: DegeneratBot):
 
             url = cog.extract_yt_url(text)
             if url:
-                await cog.play.callback(cog, interaction, url)
+                await cog.play.callback(cog, interaction, url)  # type: ignore (Expected 2 positional arguments - type checker bug?)
 
             elif e.description or e.title:
-                await cog.play.callback(cog, interaction, e.description or e.title)
+                await cog.play.callback(cog, interaction, e.description or e.title)  # type: ignore (Expected 2 positional arguments - type checker bug?)
 
         else:
             await interaction.response.send_message(

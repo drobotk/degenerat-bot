@@ -122,7 +122,7 @@ class React(commands.Cog):
     async def react(
         self, ctx: commands.Context, *, text: str
     ):  # good luck using slash commands
-        if not ctx.message.reference:
+        if not ctx.message.reference or not ctx.message.reference.message_id:
             return
 
         target = discord.PartialMessage(
@@ -154,7 +154,8 @@ class ReactionModal(ui.Modal):
         out = text_to_emojis(self.text.value)
         if not out:
             return await interaction.response.send_message(
-                "**Błąd: nie da się dodać takiej reakcji (i parasola w dupie otworzyć)**", ephemeral=True
+                "**Błąd: nie da się dodać takiej reakcji (i parasola w dupie otworzyć)**",
+                ephemeral=True,
             )
 
         await interaction.response.defer()

@@ -36,7 +36,7 @@ async def setup(bot: DegeneratBot):
         interaction: discord.Interaction, message: discord.Message
     ):
         if message.content:
-            await cog.figlet.callback(cog, interaction, message.content)
+            await cog.figlet.callback(cog, interaction, message.content)  # type: ignore (Expected 2 positional arguments - type checker bug?)
         else:
             await interaction.response.send_message(
                 "**Błąd: Wiadomość bez treści**", ephemeral=True
