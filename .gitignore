@@ -3,5 +3,6 @@
 *.pyc
 *.json
 *.code-workspace
+.env
 backup/
 bot/modules/_.py
