@@ -5,7 +5,10 @@ try:
     import dotenv
 
     dotenv.load_dotenv()
+except:
+    pass
 
+try:
     import uvloop
 
     uvloop.install()
