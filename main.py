@@ -2,9 +2,13 @@ import os
 import logging
 
 try:
-    import dotenv  # type: ignore
+    import dotenv
 
     dotenv.load_dotenv()
+
+    import uvloop
+
+    uvloop.install()
 except:
     pass
 
