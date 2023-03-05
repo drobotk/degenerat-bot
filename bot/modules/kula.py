@@ -45,7 +45,7 @@ class Kula(commands.Cog):
                 )
 
             await interaction.followup.send(
-                file=discord.File(out_name, description=f"{input.filename} jako kula")
+                file=discord.File(out_name)
             )
             os.remove(out_name)
 
