@@ -80,7 +80,8 @@ class Youtube:
                 video_id: str = data["videoRenderer"]["videoId"]
                 title: str = data["videoRenderer"]["title"]["runs"][0]["text"]
 
-            except:
+            except Exception as e:
+                self.log.error(f"Search error: {e.__class__.__name__}: {e}")
                 continue
 
             result.append(YoutubeVideo(id=video_id, title=title))
