@@ -46,9 +46,6 @@ class YTPosts(commands.Cog):
                 continue
 
             data = json.loads(m.group(1))
-            with open("cock.json", "w") as f:
-                json.dump(data, f)
-
             post: Optional[dict[str, Any]] = traverse_obj(data, ("contents", "twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "itemSectionRenderer", "contents", 0, "backstagePostThreadRenderer", "post", "backstagePostRenderer"))  # type: ignore (no idea how to type correctly)
             if not post:
                 self.log.error(f"{e.url} traverse_obj returned None")
