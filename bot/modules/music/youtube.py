@@ -109,6 +109,9 @@ class Youtube:
             info = await self.bot.loop.run_in_executor(
                 None, lambda: self.ydl.extract_info(url, download=False)
             )
+            if not info:
+                raise Exception("info is None")
+            
             title: str = info["title"]
             filesize: int = info["filesize"]
             thumb: str = info["thumbnail"]
