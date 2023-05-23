@@ -11,12 +11,15 @@ from discord.ext import commands
 from ..bot import DegeneratBot
 from ..utils import traverse_obj, dots_after
 
+
 class YTPosts(commands.Cog):
     def __init__(self, bot: DegeneratBot):
         self.bot: DegeneratBot = bot
         self.log: logging.Logger = logging.getLogger(__name__)
 
-        self.re_link: re.Pattern[str] = re.compile(r"https:\/\/www\.youtube\.com\/post\/[a-zA-Z0-9_\-]{36}")
+        self.re_link: re.Pattern[str] = re.compile(
+            r"https:\/\/www\.youtube\.com\/post\/[a-zA-Z0-9_\-]{36}"
+        )
         self.re_json: re.Pattern[str] = re.compile(r">var ytInitialData = (\{.+?\});<")
 
         self.processed_messages: list[int] = []
@@ -33,13 +36,21 @@ class YTPosts(commands.Cog):
 
             self.log.info(e.url)
 
-            async with self.bot.session.get(e.url, cookies={"SOCS": "CAESNQgDEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjMwMzE0LjA2X3AxGgJwbCACGgYIgNvOoAY", "YSC": "LvvlUwB2Uko", "__Secure-YEC": "Cgt1S1A1WjY1VTZDZyick9OgBg%3D%3D", "CONSENT": "PENDING+757"}) as r:
+            async with self.bot.session.get(
+                e.url,
+                cookies={
+                    "SOCS": "CAESNQgDEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjMwMzE0LjA2X3AxGgJwbCACGgYIgNvOoAY",
+                    "YSC": "LvvlUwB2Uko",
+                    "__Secure-YEC": "Cgt1S1A1WjY1VTZDZyick9OgBg%3D%3D",
+                    "CONSENT": "PENDING+757",
+                },
+            ) as r:
                 if not r.ok:
                     self.log.error(f"{e.url} status code {r.status}")
                     continue
-                
+
                 text = await r.text()
-            
+
             m = self.re_json.search(text)
             if not m:
                 self.log.error(f"{e.url} didn't match ytInitialData ({r.url=})")
@@ -51,8 +62,10 @@ class YTPosts(commands.Cog):
                 self.log.error(f"{e.url} traverse_obj returned None")
                 continue
 
-            embed = discord.Embed(color=message.guild.me.color if message.guild else None)
-            
+            embed = discord.Embed(
+                color=message.guild.me.color if message.guild else None
+            )
+
             author: Optional[str] = traverse_obj(post, ("authorText", "runs", 0, "text"))  # type: ignore (no idea how to type correctly)
             if author:
                 thumbnail: Optional[str] = traverse_obj(post, ("authorThumbnail", "thumbnails", 0, "url"))  # type: ignore (no idea how to type correctly)
@@ -60,7 +73,11 @@ class YTPosts(commands.Cog):
                     thumbnail = "https:" + thumbnail
 
                 urls: Optional[list[str]] = traverse_obj(post, ("authorEndpoint", (("commandMetadata", "webCommandMetadata", "url"), ("browseEndpoint", "canonicalBaseUrl"))))  # type: ignore (no idea how to type correctly)
-                embed.set_author(name=author, icon_url=thumbnail, url=f"https://www.youtube.com{urls[0]}" if urls else None)
+                embed.set_author(
+                    name=author,
+                    icon_url=thumbnail,
+                    url=f"https://www.youtube.com{urls[0]}" if urls else None,
+                )
 
             texts: Optional[list[str]] = traverse_obj(post, ("contentText", "runs", ..., "text"))  # type: ignore (no idea how to type correctly)
             embed.description = dots_after("".join(texts), 4096) if texts else None
@@ -69,7 +86,7 @@ class YTPosts(commands.Cog):
             if images:
                 images.sort(key=lambda x: x["width"])
                 url = images[-1]["url"]
-                
+
                 async with self.bot.session.get(url) as r:
                     if not r.ok:
                         self.log.error(f"{e.url} image fetch failed - wtf?")
@@ -80,21 +97,23 @@ class YTPosts(commands.Cog):
                         gif = BytesIO()
                         with Image.open(webp) as image:
                             frames: list[Image.Image] = []
-                            for frame in ImageSequence.Iterator(image):        
-                                im2 = Image.new("RGB", frame.size, (255, 255, 255))        
+                            for frame in ImageSequence.Iterator(image):
+                                im2 = Image.new("RGB", frame.size, (255, 255, 255))
                                 bands = frame.split()
                                 mask = bands[3] if len(bands) > 3 else None
                                 im2.paste(frame, mask=mask)
-                                frames.append(im2.convert('RGB'))
+                                frames.append(im2.convert("RGB"))
 
-                            frames[0].save(gif,
-                                        format='gif',
-                                        save_all=True,
-                                        append_images=frames[1:],
-                                        optimize=True,
-                                        duration=image.info.get("duration", 10),
-                                        loop=image.info.get("loop", 0),
-                                        quality=100)
+                            frames[0].save(
+                                gif,
+                                format="gif",
+                                save_all=True,
+                                append_images=frames[1:],
+                                optimize=True,
+                                duration=image.info.get("duration", 10),
+                                loop=image.info.get("loop", 0),
+                                quality=100,
+                            )
 
                         gif.seek(0)
                         fn = f'{post["postId"]}.gif'
@@ -105,7 +124,10 @@ class YTPosts(commands.Cog):
             if poll:
                 votes: Optional[str] = traverse_obj(poll, ("totalVotes", "simpleText"))  # type: ignore (no idea how to type correctly)
                 choices: list[str] = traverse_obj(poll, ("choices", ..., "text", "runs", 0, "text")) or []  # type: ignore (no idea how to type correctly)
-                embed.add_field(name=f"Ankieta: {votes}", value="\n".join([f"🔹 {c}" for c in choices]))
+                embed.add_field(
+                    name=f"Ankieta: {votes}",
+                    value="\n".join([f"🔹 {c}" for c in choices]),
+                )
 
             likes: Optional[str] = traverse_obj(post, ("voteCount", "simpleText"))  # type: ignore (no idea how to type correctly)
             if likes:
@@ -121,14 +143,19 @@ class YTPosts(commands.Cog):
     async def on_message(self, message: discord.Message):
         if message.author.bot or not message.content or not message.embeds:
             return
-        
+
         await self.process_message(message)
 
     @commands.Cog.listener()
     async def on_message_edit(self, _: discord.Message, after: discord.Message):
-        if after.id in self.processed_messages or after.author.bot or not after.content or not after.embeds:
+        if (
+            after.id in self.processed_messages
+            or after.author.bot
+            or not after.content
+            or not after.embeds
+        ):
             return
-        
+
         await self.process_message(after)
 
 

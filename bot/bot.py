@@ -23,7 +23,11 @@ class DegeneratBot(commands.Bot):
         super().__init__(command_prefix=",", help_command=None, intents=intents)
 
     async def setup_hook(self) -> None:
-        self.session: aiohttp.ClientSession = aiohttp.ClientSession(headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0"})
+        self.session: aiohttp.ClientSession = aiohttp.ClientSession(
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0"
+            }
+        )
 
         await self.load_extension("jishaku")
 

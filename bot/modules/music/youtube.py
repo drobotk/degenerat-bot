@@ -1,9 +1,9 @@
 import re
 import json
-import typing
 import pathlib
 import logging
 from dataclasses import dataclass
+from typing import Optional, Any
 
 import discord
 
@@ -43,9 +43,7 @@ class Youtube:
             r"(?:https?:\/\/)?(?:www\.|m\.)?youtu(?:\.be\/|be.com\/\S*(?:watch|embed)(?:(?:(?=\/[^&\s\?]+(?!\S))\/)|(?:\S*v=|v\/)))([^\"\'&\s\?]+)"
         )
 
-        self.re_search_results = re.compile(
-            r'{"videoRenderer":{"videoId":".+?"}]},"maxOneLine":false}],"searchVideoResultEntityKey":"[A-Za-z0-9]+?"}}'
-        )
+        self.re_json: re.Pattern[str] = re.compile(r">var ytInitialData = (\{.+?\});<")
 
         self.download_path: str = f"./{__name__}/download"
         pathlib.Path(self.download_path).mkdir(parents=True, exist_ok=True)
@@ -60,7 +58,7 @@ class Youtube:
         formats.sort(key=lambda a: a["abr"])
         return [formats[-2]]
 
-    def extract_yt_url(self, text: str) -> typing.Optional[str]:
+    def extract_yt_url(self, text: str) -> Optional[str]:
         m = self.re_link.search(text)
         return f"https://www.youtube.com/watch?v={m.group(1)}" if m else None
 
@@ -69,22 +67,42 @@ class Youtube:
             "https://www.youtube.com/results", params={"search_query": q}
         ) as r:
             if not r.ok:
+                self.log.error(f"Search error: {r.status=}")
                 return []
 
             text = await r.text()
 
-        result = []
-        for m in self.re_search_results.finditer(text):
-            try:
-                data = json.loads(m.group())
-                video_id: str = data["videoRenderer"]["videoId"]
-                title: str = data["videoRenderer"]["title"]["runs"][0]["text"]
+        m = self.re_json.search(text)
+        if not m:
+            self.log.error(f"Search error: no json")
+            return []
 
-            except Exception as e:
-                self.log.error(f"Search error: {e.__class__.__name__}: {e}")
+        try:
+            data = json.loads(m.group(1)).pop(
+                "contents"
+            )  # this is expensive af, but will probably be more robust longterm (regexing json is :moyai:)
+        except (json.JSONDecodeError, KeyError) as e:
+            self.log.error(f"Search error: {e.__class__.__name__}: {e}")
+            return []
+
+        results: Optional[list[dict[str, Any]]] = utils.traverse_obj(data, ("twoColumnSearchResultsRenderer", "primaryContents", "sectionListRenderer", "contents", 0, "itemSectionRenderer", "contents"))  # type: ignore (no idea how to type correctly)
+        if not results:
+            self.log.error(f"Search error: traverse_obj returned None")
+            return []
+
+        result = []
+        for r in results:
+            try:
+                ren = r.pop("videoRenderer")
+            except KeyError:
                 continue
 
-            result.append(YoutubeVideo(id=video_id, title=title))
+            title: Optional[str] = utils.traverse_obj(ren, ("title", "runs", 0, "text"))  # type: ignore (no idea how to type correctly)
+            if not title:
+                continue
+
+            result.append(YoutubeVideo(id=ren["videoId"], title=title))
+
             if len(result) >= amount:
                 break
 
@@ -111,7 +129,7 @@ class Youtube:
             )
             if not info:
                 raise Exception("info is None")
-            
+
             title: str = info["title"]
             filesize: int = info["filesize"]
             thumb: str = info["thumbnail"]

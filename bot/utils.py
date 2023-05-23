@@ -30,22 +30,37 @@ def sub_before(a: str, b: str, c: typing.Optional[str] = None) -> str:
 
     return a[:idx]
 
+
 ##################### yt-dlp/yt-dlp/yt_dlp/utils.py <3
 NO_DEFAULT = object()
 IDENTITY = lambda x: x
+
 
 def try_call(*funcs, expected_type=None, args=[], kwargs={}):
     for f in funcs:
         try:
             val = f(*args, **kwargs)
-        except (AttributeError, KeyError, TypeError, IndexError, ValueError, ZeroDivisionError):
+        except (
+            AttributeError,
+            KeyError,
+            TypeError,
+            IndexError,
+            ValueError,
+            ZeroDivisionError,
+        ):
             pass
         else:
             if expected_type is None or isinstance(val, expected_type):
                 return val
 
+
 def variadic(x, allowed_types=(str, bytes, dict)):
-    return x if isinstance(x, collections.abc.Iterable) and not isinstance(x, allowed_types) else (x,)
+    return (
+        x
+        if isinstance(x, collections.abc.Iterable) and not isinstance(x, allowed_types)
+        else (x,)
+    )
+
 
 def int_or_none(v, scale=1, default=None, get_attr=None, invscale=1):
     if get_attr and v is not None:
@@ -54,6 +69,7 @@ def int_or_none(v, scale=1, default=None, get_attr=None, invscale=1):
         return int(v) * invscale // scale  # type: ignore (some long ass bullshit error that doesnt matter)
     except (ValueError, TypeError, OverflowError):
         return default
+
 
 class LazyList(collections.abc.Sequence):
     """Lazy immutable list from an iterable
@@ -84,7 +100,7 @@ class LazyList(collections.abc.Sequence):
 
     def exhaust(self):
         """Evaluate the entire iterable"""
-        return self._exhaust()[::-1 if self._reversed else 1]
+        return self._exhaust()[:: -1 if self._reversed else 1]
 
     @staticmethod
     def _reverse_index(x):
@@ -93,17 +109,24 @@ class LazyList(collections.abc.Sequence):
     def __getitem__(self, idx):
         if isinstance(idx, slice):
             if self._reversed:
-                idx = slice(self._reverse_index(idx.start), self._reverse_index(idx.stop), -(idx.step or 1))
+                idx = slice(
+                    self._reverse_index(idx.start),
+                    self._reverse_index(idx.stop),
+                    -(idx.step or 1),
+                )
             start, stop, step = idx.start, idx.stop, idx.step or 1
         elif isinstance(idx, int):
             if self._reversed:
                 idx = self._reverse_index(idx)
             start, stop, step = idx, idx, 0
         else:
-            raise TypeError('indices must be integers or slices')
-        if ((start or 0) < 0 or (stop or 0) < 0
-                or (start is None and step < 0)
-                or (stop is None and step > 0)):
+            raise TypeError("indices must be integers or slices")
+        if (
+            (start or 0) < 0
+            or (stop or 0) < 0
+            or (start is None and step < 0)
+            or (stop is None and step > 0)
+        ):
             # We need to consume the entire iterable to be able to slice from the end
             # Obviously, never use this with infinite iterables
             self._exhaust()
@@ -131,7 +154,9 @@ class LazyList(collections.abc.Sequence):
         return len(self._cache)
 
     def __reversed__(self):
-        return type(self)(self._iterable, reverse=not self._reversed, _cache=self._cache)
+        return type(self)(
+            self._iterable, reverse=not self._reversed, _cache=self._cache
+        )
 
     def __copy__(self):
         return type(self)(self._iterable, reverse=self._reversed, _cache=self._cache)
@@ -143,10 +168,20 @@ class LazyList(collections.abc.Sequence):
     def __str__(self):
         return repr(self.exhaust())
 
+
 def traverse_obj(
-        obj, *paths, default=NO_DEFAULT, expected_type=None, get_all=True,
-        casesense=True, is_user_input=False, traverse_string=False):
-    is_sequence = lambda x: isinstance(x, collections.abc.Sequence) and not isinstance(x, (str, bytes))
+    obj,
+    *paths,
+    default=NO_DEFAULT,
+    expected_type=None,
+    get_all=True,
+    casesense=True,
+    is_user_input=False,
+    traverse_string=False
+):
+    is_sequence = lambda x: isinstance(x, collections.abc.Sequence) and not isinstance(
+        x, (str, bytes)
+    )
     casefold = lambda k: k.casefold() if isinstance(k, str) else k
 
     if isinstance(expected_type, type):
@@ -165,7 +200,7 @@ def traverse_obj(
             result = obj
 
         elif isinstance(key, set):
-            assert len(key) == 1, 'Set should only be used to wrap a single item'
+            assert len(key) == 1, "Set should only be used to wrap a single item"
             item = next(iter(key))
             if isinstance(item, type):
                 if isinstance(obj, item):
@@ -176,7 +211,8 @@ def traverse_obj(
         elif isinstance(key, (list, tuple)):
             branching = True
             result = itertools.chain.from_iterable(
-                apply_path(obj, branch, is_last)[0] for branch in key)
+                apply_path(obj, branch, is_last)[0] for branch in key
+            )
 
         elif key is ...:
             branching = True
@@ -200,8 +236,8 @@ def traverse_obj(
                 iter_obj = enumerate(obj)
             elif isinstance(obj, re.Match):
                 iter_obj = itertools.chain(
-                    enumerate((obj.group(), *obj.groups())),
-                    obj.groupdict().items())
+                    enumerate((obj.group(), *obj.groups())), obj.groupdict().items()
+                )
             elif traverse_string:
                 branching = False
                 iter_obj = enumerate(str(obj))
@@ -210,18 +246,24 @@ def traverse_obj(
 
             result = (v for k, v in iter_obj if try_call(key, args=(k, v)))
             if not branching:  # string traversal
-                result = ''.join(result)
+                result = "".join(result)
 
         elif isinstance(key, dict):
-            iter_obj = ((k, _traverse_obj(obj, v, False, is_last)) for k, v in key.items())
+            iter_obj = (
+                (k, _traverse_obj(obj, v, False, is_last)) for k, v in key.items()
+            )
             result = {
-                k: v if v is not None else default for k, v in iter_obj
+                k: v if v is not None else default
+                for k, v in iter_obj
                 if v is not None or default is not NO_DEFAULT
             } or None
 
         elif isinstance(obj, collections.abc.Mapping):
-            result = (obj.get(key) if casesense or (key in obj) else
-                      next((v for k, v in obj.items() if casefold(k) == key), None))
+            result = (
+                obj.get(key)
+                if casesense or (key in obj)
+                else next((v for k, v in obj.items() if casefold(k) == key), None)
+            )
 
         elif isinstance(obj, re.Match):
             if isinstance(key, int) or casesense:
@@ -229,7 +271,9 @@ def traverse_obj(
                     result = obj.group(key)
 
             elif isinstance(key, str):
-                result = next((v for k, v in obj.groupdict().items() if casefold(k) == key), None)
+                result = next(
+                    (v for k, v in obj.groupdict().items() if casefold(k) == key), None
+                )
 
         elif isinstance(key, (int, slice)):
             if is_sequence(obj):
@@ -261,10 +305,10 @@ def traverse_obj(
         key = None
         for last, key in lazy_last(variadic(path, (str, bytes, dict, set))):
             if is_user_input and isinstance(key, str):
-                if key == ':':
+                if key == ":":
                     key = ...
-                elif ':' in key:
-                    key = slice(*map(int_or_none, key.split(':')))
+                elif ":" in key:
+                    key = slice(*map(int_or_none, key.split(":")))
                 elif int_or_none(key) is not None:
                     key = int(key)
 
@@ -306,4 +350,6 @@ def traverse_obj(
             return result
 
     return None if default is NO_DEFAULT else default
+
+
 ##################################################### yt-dlp/yt-dlp/yt_dlp/utils.py <3

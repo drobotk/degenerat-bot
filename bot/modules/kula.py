@@ -44,9 +44,7 @@ class Kula(commands.Cog):
                     "**Coś poszło nie tak, kula się nie zrobiła**"
                 )
 
-            await interaction.followup.send(
-                file=discord.File(out_name)
-            )
+            await interaction.followup.send(file=discord.File(out_name))
             os.remove(out_name)
 
         finally:
