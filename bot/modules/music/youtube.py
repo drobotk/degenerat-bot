@@ -8,6 +8,7 @@ from typing import Optional, Any
 import discord
 
 from yt_dlp import YoutubeDL
+from yt_dlp.utils import traverse_obj
 
 from ...bot import DegeneratBot
 from ... import utils
@@ -78,14 +79,13 @@ class Youtube:
             return []
 
         try:
-            data = json.loads(m.group(1)).pop(
-                "contents"
-            )  # this is expensive af, but will probably be more robust longterm (regexing json is :moyai:)
+            # this is expensive af, but will probably be more robust longterm (regexing json is :moyai:)
+            data = json.loads(m.group(1)).pop("contents")
         except (json.JSONDecodeError, KeyError) as e:
             self.log.error(f"Search error: {e.__class__.__name__}: {e}")
             return []
 
-        results: Optional[list[dict[str, Any]]] = utils.traverse_obj(data, ("twoColumnSearchResultsRenderer", "primaryContents", "sectionListRenderer", "contents", 0, "itemSectionRenderer", "contents"))  # type: ignore (no idea how to type correctly)
+        results: Optional[list[dict[str, Any]]] = traverse_obj(data, ("twoColumnSearchResultsRenderer", "primaryContents", "sectionListRenderer", "contents", 0, "itemSectionRenderer", "contents"))  # type: ignore (no idea how to type correctly)
         if not results:
             self.log.error(f"Search error: traverse_obj returned None")
             return []
@@ -97,7 +97,7 @@ class Youtube:
             except KeyError:
                 continue
 
-            title: Optional[str] = utils.traverse_obj(ren, ("title", "runs", 0, "text"))  # type: ignore (no idea how to type correctly)
+            title: Optional[str] = traverse_obj(ren, ("title", "runs", 0, "text"))  # type: ignore (no idea how to type correctly)
             if not title:
                 continue
 

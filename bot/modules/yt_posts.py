@@ -9,7 +9,8 @@ import discord
 from discord.ext import commands
 
 from ..bot import DegeneratBot
-from ..utils import traverse_obj, dots_after
+from ..utils import dots_after
+from yt_dlp.utils import traverse_obj
 
 
 class YTPosts(commands.Cog):
