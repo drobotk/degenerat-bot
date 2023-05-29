@@ -6,7 +6,6 @@ aiohttp
 PyNaCl
 lxml
 beautifulsoup4
-asyncssh
 pyfiglet
 cowsay
 Pillow
