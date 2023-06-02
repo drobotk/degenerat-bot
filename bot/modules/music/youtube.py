@@ -85,23 +85,18 @@ class Youtube:
             self.log.error(f"Search error: {e.__class__.__name__}: {e}")
             return []
 
-        results: Optional[list[dict[str, Any]]] = traverse_obj(data, ("twoColumnSearchResultsRenderer", "primaryContents", "sectionListRenderer", "contents", 0, "itemSectionRenderer", "contents"))  # type: ignore (no idea how to type correctly)
-        if not results:
-            self.log.error(f"Search error: traverse_obj returned None")
+        renderers: Optional[list[dict[str, Any]]] = traverse_obj(data, ("twoColumnSearchResultsRenderer", "primaryContents", "sectionListRenderer", "contents", ..., "itemSectionRenderer", "contents", ..., "videoRenderer"))  # type: ignore (no idea how to type correctly)
+        if not renderers:
+            self.log.error(f"Search error: traverse_obj returned nothing")
             return []
 
         result = []
-        for r in results:
-            try:
-                ren = r.pop("videoRenderer")
-            except KeyError:
+        for ren in renderers:
+            titles: Optional[list[str]] = traverse_obj(ren, ("title", "runs", ..., "text"))  # type: ignore (no idea how to type correctly)
+            if not titles:
                 continue
 
-            title: Optional[str] = traverse_obj(ren, ("title", "runs", 0, "text"))  # type: ignore (no idea how to type correctly)
-            if not title:
-                continue
-
-            result.append(YoutubeVideo(id=ren["videoId"], title=title))
+            result.append(YoutubeVideo(id=ren["videoId"], title="".join(titles)))
 
             if len(result) >= amount:
                 break

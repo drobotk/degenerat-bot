@@ -281,7 +281,7 @@ class Music(commands.Cog, Youtube):
 
     @app_commands.command(description="Usuwa pozycję z kolejki muzyki")
     @app_commands.describe(num="Element kolejki")
-    @app_commands.autocomplete(num=autocomplete_queue_remove)
+    @app_commands.autocomplete(num=autocomplete_queue_remove)  # type: ignore (wtf is this even)
     @app_commands.guild_only
     async def remove(self, interaction: discord.Interaction, num: int):
         vc = interaction.guild.voice_client  # type: ignore (command is guild only, guild can't be None here)
