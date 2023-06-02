@@ -19,7 +19,7 @@ class YTPosts(commands.Cog):
         self.log: logging.Logger = logging.getLogger(__name__)
 
         self.re_link: re.Pattern[str] = re.compile(
-            r"https:\/\/www\.youtube\.com\/post\/[a-zA-Z0-9_\-]{36}"
+            r"https:\/\/www\.youtube\.com\/(?:post\/|channel\/[a-zA-Z0-9_\-]{24}\/community\?lb=)[a-zA-Z0-9_\-]{36}"
         )
         self.re_json: re.Pattern[str] = re.compile(r">var ytInitialData = (\{.+?\});<")
 
@@ -57,8 +57,14 @@ class YTPosts(commands.Cog):
                 self.log.error(f"{e.url} didn't match ytInitialData ({r.url=})")
                 continue
 
-            data = json.loads(m.group(1))
-            post: Optional[dict[str, Any]] = traverse_obj(data, ("contents", "twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "itemSectionRenderer", "contents", 0, "backstagePostThreadRenderer", "post", "backstagePostRenderer"))  # type: ignore (no idea how to type correctly)
+            try:
+                # this is expensive af but regexing json is :moyai:
+                data = json.loads(m.group(1)).pop("contents")
+            except (json.JSONDecodeError, KeyError) as e:
+                self.log.error(f"{e.url} {e.__class__.__name__}: {e}")
+                continue
+
+            post: Optional[dict[str, Any]] = traverse_obj(data, ("twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "itemSectionRenderer", "contents", 0, "backstagePostThreadRenderer", "post", "backstagePostRenderer"))  # type: ignore (no idea how to type correctly)
             if not post:
                 self.log.error(f"{e.url} traverse_obj returned None")
                 continue
