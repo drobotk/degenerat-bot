@@ -16,7 +16,7 @@ class Activities(commands.Cog):
             discord.Game("Ventti z Drabikiem"),
             discord.Game("My Summer Car"),
             discord.Activity(
-                type=discord.ActivityType.watching, name="niemieckie prono"
+                type=discord.ActivityType.watching, name="czeskie porno"
             ),
             discord.Activity(
                 type=discord.ActivityType.watching, name="piotrovice.cc/item4.html"
