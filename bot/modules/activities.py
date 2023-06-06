@@ -16,10 +16,10 @@ class Activities(commands.Cog):
             discord.Game("Ventti z Drabikiem"),
             discord.Game("My Summer Car"),
             discord.Activity(
-                type=discord.ActivityType.watching, name="niemieckie porno"
+                type=discord.ActivityType.watching, name="czeskie porno"
             ),
             discord.Activity(
-                type=discord.ActivityType.watching, name="piotrovice.cf/item4.html"
+                type=discord.ActivityType.watching, name="piotrovice.cc/item4.html"
             ),
             discord.Activity(
                 type=discord.ActivityType.watching, name="fish spinning for 68 years"
