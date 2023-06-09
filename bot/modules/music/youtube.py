@@ -150,7 +150,7 @@ class Youtube:
         e.title = "Pobierańsko..."
         await reply(embed=e)
 
-        filename = f"{self.download_path}/{self.ydl.prepare_filename(info)}"
+        filename = f"{self.download_path}/{self.ydl.prepare_filename(info, outtmpl='%(id)s.%(ext)s')}"
         success, _ = await self.bot.loop.run_in_executor(
             None, lambda: self.ydl.dl(filename, info)
         )
