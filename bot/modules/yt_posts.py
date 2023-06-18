@@ -60,8 +60,8 @@ class YTPosts(commands.Cog):
             try:
                 # this is expensive af but regexing json is :moyai:
                 data = json.loads(m.group(1)).pop("contents")
-            except (json.JSONDecodeError, KeyError) as e:
-                self.log.error(f"{e.url} {e.__class__.__name__}: {e}")
+            except (json.JSONDecodeError, KeyError) as err:
+                self.log.error(f"{e.url} {err.__class__.__name__}: {err}")
                 continue
 
             post: Optional[dict[str, Any]] = traverse_obj(data, ("twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "itemSectionRenderer", "contents", 0, "backstagePostThreadRenderer", "post", "backstagePostRenderer"))  # type: ignore (no idea how to type correctly)

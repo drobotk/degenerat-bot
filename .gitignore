@@ -1,4 +1,5 @@
 *.webm
+*.mp4
 *.sh
 *.pyc
 *.json
