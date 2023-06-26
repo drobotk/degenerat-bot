@@ -143,8 +143,9 @@ class YTPosts(commands.Cog):
             new_embeds.append(embed)
 
         if new_embeds:
-            await message.reply(embeds=new_embeds, files=files, mention_author=False)
             self.processed_messages.append(message.id)
+            await message.reply(embeds=new_embeds, files=files, mention_author=False)
+            await message.edit(suppress=True)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):

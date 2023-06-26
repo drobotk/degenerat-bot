@@ -58,8 +58,9 @@ class IGReels(commands.Cog):
                 files.append(discord.File(filename))
 
         if files:
-            await message.reply(files=files, mention_author=False)
             self.processed_messages.append(message.id)
+            await message.reply(files=files, mention_author=False)
+            await message.edit(suppress=True)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
