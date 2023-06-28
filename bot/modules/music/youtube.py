@@ -51,7 +51,7 @@ class Youtube:
 
     def format_selector(self, ctx: dict) -> list[dict]:
         formats: list[dict] = ctx["formats"]
-        formats = [a for a in formats if a["acodec"] == "opus"]
+        formats = [f for f in formats if f.get("acodec") == "opus"]
         if len(formats) <= 1:
             return formats
 
@@ -132,7 +132,7 @@ class Youtube:
         except Exception as err:
             e = discord.Embed(
                 title="**Wystąpił błąd**",
-                description=str(err),
+                description=f"{err.__class__.__name__}: {err}",
                 color=discord.Colour.red(),
             )
             await reply(embed=e)
