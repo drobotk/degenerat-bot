@@ -15,7 +15,7 @@ class IGReels(commands.Cog):
         self.log: logging.Logger = logging.getLogger(__name__)
 
         self.re_link: re.Pattern[str] = re.compile(
-            r"https:\/\/www\.instagram\.com\/(?:p|reel)\/([a-zA-Z0-9_\-]{11})\/?.*"
+            r"^https:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels)\/([a-zA-Z0-9_\-]{11})"
         )
 
         params = {
@@ -35,19 +35,23 @@ class IGReels(commands.Cog):
             if not e.url:
                 continue
 
-            if not self.re_link.fullmatch(e.url):
+            m = self.re_link.match(e.url)
+            if not m:
                 continue
 
-            self.log.info(e.url)
+            id = m.group(1)
+            self.log.info(id)
+
+            url = f"https://www.instagram.com/reel/{id}"
 
             try:
                 info = await self.bot.loop.run_in_executor(
-                    None, lambda: self.ydl.extract_info(e.url, download=False)
+                    None, lambda: self.ydl.extract_info(url, download=False)
                 )
                 if not info:
                     return
             except:
-                self.log.error(f"{e.url} failed to extract info")
+                self.log.error(f"{url} failed to extract info")
                 return
 
             filename = f"{self.download_path}/{self.ydl.prepare_filename(info, outtmpl='%(id)s.%(ext)s')}"
