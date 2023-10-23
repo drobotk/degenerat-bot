@@ -1,3 +1,4 @@
+import os
 import sys
 
 import discord
@@ -21,7 +22,7 @@ class Info(commands.Cog):
         avatar = self.bot.user.avatar.url if self.bot.user.avatar else None  # type: ignore (bot.user will never be None here)
         e.set_author(name=str(self.bot.user), icon_url=avatar)
 
-        e.add_field(name="Stworzony przez", value="RoboT#2675", inline=False)
+        e.add_field(name="Stworzony przez", value="drobotk (RoboT#2675)", inline=False)
         e.add_field(name="Serwery", value=len(self.bot.guilds))
 
         cmds = [
@@ -31,23 +32,23 @@ class Info(commands.Cog):
         ]
         e.add_field(name="Komendy", value=len(cmds))
 
-        e.add_field(name="Hosting", value="Debil@Piotrovice", inline=False)
+        uname = os.uname()
+        e.add_field(
+            name="OS",
+            value=f"{uname.sysname} {uname.release} {uname.machine}",
+            inline=False,
+        )
         e.add_field(name="Python", value=sys.version, inline=False)
         e.add_field(name="discord.py", value=discord.__version__, inline=False)
 
-        app_info = await self.bot.http.application_info()
-        install_params = app_info.get("install_params")
-        if not install_params:
-            await interaction.response.send_message(embed=e)
-            return
-
-        scopes: list[str] = install_params.get("scopes")
-        permissions: str = install_params.get("permissions")
+        app_info = await self.bot.application_info()
+        if not app_info.install_params:
+            return await interaction.response.send_message(embed=e)
 
         invite_url = utils.oauth_url(
             self.bot.user.id,  # type: ignore (bot.user will never be None here)
-            permissions=discord.Permissions(int(permissions)),
-            scopes=scopes,
+            permissions=app_info.install_params.permissions,
+            scopes=app_info.install_params.scopes,
         )
 
         view = discord.ui.View()
