@@ -25,9 +25,11 @@ def main():
     )
 
     token = os.getenv("DISCORD_TOKEN")
-    if token:
-        bot = DegeneratBot()
-        bot.run(token, log_handler=None)
+    if not token:
+        return logging.fatal("DISCORD_TOKEN environment variable not set!")
+
+    bot = DegeneratBot()
+    bot.run(token, log_handler=None)
 
 
 if __name__ == "__main__":
