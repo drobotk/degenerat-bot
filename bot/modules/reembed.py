@@ -9,20 +9,20 @@ from ..bot import DegeneratBot
 from yt_dlp import YoutubeDL
 
 
-class IGReels(commands.Cog):
+class ReEmbed(commands.Cog):
     def __init__(self, bot: DegeneratBot):
         self.bot: DegeneratBot = bot
         self.log: logging.Logger = logging.getLogger(__name__)
 
-        self.re_link: re.Pattern[str] = re.compile(
-            r"^https:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels)\/([a-zA-Z0-9_\-]{11})"
+        self.re_links: tuple[re.Pattern[str], ...] = (
+            re.compile(r"https:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels)\/.{11}"),
+            re.compile(r"https:\/\/(?:www\.)?reddit\.com\/r\/.+?\/comments\/.+?\/"),
         )
 
-        params = {
+        self.ydl_params = {
             "no_color": True,
             "logger": self.log,
         }
-        self.ydl = YoutubeDL(params)
 
         self.download_path: str = f"./{__name__}/download"
         pathlib.Path(self.download_path).mkdir(parents=True, exist_ok=True)
@@ -31,40 +31,50 @@ class IGReels(commands.Cog):
 
     async def process_message(self, message: discord.Message):
         files: list[discord.File] = []
+
         for e in message.embeds:
             if not e.url:
                 continue
 
-            m = self.re_link.match(e.url)
-            if not m:
+            url = None
+            for p in self.re_links:
+                m = p.match(e.url)
+                if m:
+                    url = m.group()
+                    break
+
+            if not url:
                 continue
 
-            id = m.group(1)
-            self.log.info(id)
+            self.log.info(url)
 
-            url = f"https://www.instagram.com/reel/{id}"
+            params = {
+                **self.ydl_params,
+                "outtmpl": f"{self.download_path}/%(id)s.%(ext)s",
+            }
+
+            def download():
+                with YoutubeDL(params=params) as ydl:
+                    info = ydl.extract_info(url)
+                    return ydl.prepare_filename(info)
 
             try:
-                info = await self.bot.loop.run_in_executor(
-                    None, lambda: self.ydl.extract_info(url, download=False)
-                )
-                if not info:
-                    return
+                filename = await self.bot.loop.run_in_executor(None, download)
+                if not filename:
+                    raise Exception
             except:
-                self.log.error(f"{url} failed to extract info")
-                return
+                self.log.error(f"{url} failed to download")
+                continue
 
-            filename = f"{self.download_path}/{self.ydl.prepare_filename(info, outtmpl='%(id)s.%(ext)s')}"
-            success, _ = await self.bot.loop.run_in_executor(
-                None, lambda: self.ydl.dl(filename, info)
-            )
-            if success:
-                files.append(discord.File(filename))
+            files.append(discord.File(filename))
 
         if files:
             self.processed_messages.append(message.id)
             await message.reply(files=files, mention_author=False)
-            await message.edit(suppress=True)
+            try:
+                await message.edit(suppress=True)
+            except discord.Forbidden:
+                pass
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -87,4 +97,4 @@ class IGReels(commands.Cog):
 
 
 async def setup(bot: DegeneratBot):
-    await bot.add_cog(IGReels(bot))
+    await bot.add_cog(ReEmbed(bot))
