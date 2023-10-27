@@ -14,10 +14,10 @@ class ReEmbed(commands.Cog):
         self.bot: DegeneratBot = bot
         self.log: logging.Logger = logging.getLogger(__name__)
 
-        self.re_links: tuple[re.Pattern[str], ...] = (
-            re.compile(r"https:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels)\/.{11}"),
-            re.compile(r"https:\/\/(?:www\.)?reddit\.com\/r\/.+?\/comments\/.+?\/"),
-        )
+        self.patterns: dict[str, str | None] = {
+            r"https:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels)\/(.{11})": r"https://www.instagram.com/reel/\1",
+            r"https:\/\/(?:www\.)?reddit\.com\/r\/.+?\/comments\/.+?\/": None,
+        }
 
         self.ydl_params = {
             "no_color": True,
@@ -37,10 +37,13 @@ class ReEmbed(commands.Cog):
                 continue
 
             url = None
-            for p in self.re_links:
-                m = p.match(e.url)
+            for p, s in self.patterns.items():
+                m = re.match(p, e.url)
                 if m:
                     url = m.group()
+                    if s:
+                        url = re.sub(p, s, url)
+
                     break
 
             if not url:
