@@ -352,7 +352,16 @@ class Music(commands.Cog, Youtube):
         text = f"**Tekst dla** `{data.resolved_title}`\n{data.lyrics}"
 
         # pagination for discord 2000 character limit
-        pages = [text[i : i + 2000] for i in range(0, len(text), 2000)]
+        lines = text.splitlines(True)
+        pages: list[str] = []
+        buf = ""
+        for line in lines:
+            if len(buf + line) > 2000:
+                pages.append(buf)
+                buf = line
+            else:
+                buf += line
+        pages.append(buf)
 
         # send first page as the interaction response
         await interaction.followup.send(pages[0])
