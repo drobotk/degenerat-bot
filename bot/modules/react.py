@@ -1,5 +1,3 @@
-import typing
-
 import discord
 from discord.ext import commands
 from discord import app_commands, ui
@@ -92,7 +90,7 @@ def text_to_emojis(text: str) -> list[str]:
     while text:
         r = 1  # number of chars consumed (for combos)
 
-        e: typing.Optional[str] = None
+        e: str | None = None
         for i in [3, 2, 1]:
             s = l_to_e.get(text[:i], ())
             e = next(

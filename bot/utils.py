@@ -1,9 +1,3 @@
-import collections, collections.abc
-import contextlib
-import inspect
-import itertools
-import re
-import typing
 from urllib.parse import urlparse
 
 
@@ -23,7 +17,7 @@ def dots_after(inp: str, length: int) -> str:
     return inp[: length - 3] + "..."
 
 
-def sub_before(a: str, b: str, c: typing.Optional[str] = None) -> str:
+def sub_before(a: str, b: str, c: str | None = None) -> str:
     idx = a.find(b)
     if idx < 0:
         return c or a

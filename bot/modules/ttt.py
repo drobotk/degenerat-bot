@@ -1,13 +1,11 @@
 from __future__ import annotations
 from enum import Enum, auto
-from typing import Union
 
 import discord
 from discord.ext import commands
 from discord import app_commands, ui
 
 from ..bot import DegeneratBot
-from .. import utils
 
 
 class TTTState(Enum):
@@ -46,8 +44,8 @@ class TTTGameView(ui.View):
 
     def __init__(
         self,
-        player1: Union[discord.User, discord.Member],
-        player2: Union[discord.User, discord.Member],
+        player1: discord.User | discord.Member,
+        player2: discord.User | discord.Member,
     ):
         super().__init__(timeout=300)
         for i in range(9):
@@ -71,15 +69,15 @@ class TTTGameView(ui.View):
         await self.message.edit(content=text, view=self)
 
     @property
-    def current_move(self) -> Union[discord.User, discord.Member]:
+    def current_move(self) -> discord.User | discord.Member:
         return self.players[self.moves % 2]
 
     @classmethod
     async def send_game(
         cls,
         interaction: discord.Interaction,
-        player1: Union[discord.User, discord.Member],
-        player2: Union[discord.User, discord.Member],
+        player1: discord.User | discord.Member,
+        player2: discord.User | discord.Member,
     ):
         game = cls(player1, player2)
         text = cls.header.format(

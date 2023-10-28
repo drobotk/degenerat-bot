@@ -1,13 +1,12 @@
 import logging
-import typing
 
 import discord
 from discord.ext import tasks
 
 
 class MusicQueueAudioSource:
-    titles: typing.Optional[list[str]]
-    message: typing.Optional[discord.Message]
+    titles: list[str] | None
+    message: discord.Message | None
 
 
 class MQFFmpegPCMAudio(MusicQueueAudioSource, discord.FFmpegPCMAudio):
@@ -18,7 +17,7 @@ class MQFFmpegOpusAudio(MusicQueueAudioSource, discord.FFmpegOpusAudio):
     pass
 
 
-MusicQueueAudioSourceType = typing.Union[MQFFmpegPCMAudio, MQFFmpegOpusAudio]
+MusicQueueAudioSourceType = MQFFmpegPCMAudio | MQFFmpegOpusAudio
 
 
 class MusicQueueVoiceClient(discord.VoiceClient):
@@ -28,7 +27,7 @@ class MusicQueueVoiceClient(discord.VoiceClient):
         self.log = logging.getLogger(__name__)
 
         self.entries: list[MusicQueueAudioSourceType] = []
-        self.text_channel: typing.Optional[discord.TextChannel] = None
+        self.text_channel: discord.TextChannel | None = None
 
         self.update.start()
 
@@ -37,8 +36,8 @@ class MusicQueueVoiceClient(discord.VoiceClient):
         source: str,
         *,
         opus: bool,
-        titles: typing.Optional[list[str]] = None,
-        message: typing.Optional[discord.Message] = None,
+        titles: list[str] | None = None,
+        message: discord.Message | None = None,
     ) -> bool:
         if opus:
             entry = await MQFFmpegOpusAudio.from_probe(source)

@@ -1,5 +1,4 @@
 import logging
-import typing
 
 import discord
 from discord.ext import commands
@@ -317,9 +316,7 @@ class Music(commands.Cog, Youtube):
         description="Pobiera tekst piosenki aktualnie odtwarzanej lub podanej"
     )
     @app_commands.describe(q="Wyszukiwana fraza")
-    async def lyrics(
-        self, interaction: discord.Interaction, q: typing.Optional[str] = None
-    ):
+    async def lyrics(self, interaction: discord.Interaction, q: str | None = None):
         titles: list[str] = []
         if q is not None:
             titles.append(q)
@@ -335,14 +332,13 @@ class Music(commands.Cog, Youtube):
                 titles = vc.source.titles
 
         if not any(titles):
-            await interaction.response.send_message(
+            return await interaction.response.send_message(
                 "**Brak aktualnie odtwarzanego utworu**", ephemeral=True
             )
-            return
 
         await interaction.response.defer()
 
-        data: typing.Optional[LyricsData] = None
+        data: LyricsData | None = None
         for t in titles:
             self.log.debug(f'Fetching lyrics for "{t}"')
             data = await get_genius_lyrics(self.bot.session, q=t)

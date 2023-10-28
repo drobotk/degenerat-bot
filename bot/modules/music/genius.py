@@ -1,4 +1,3 @@
-import typing
 from dataclasses import dataclass
 
 import aiohttp
@@ -13,7 +12,7 @@ class LyricsData:
 
 async def get_genius_lyrics(
     session: aiohttp.ClientSession, **params
-) -> typing.Optional[LyricsData]:
+) -> LyricsData | None:
     async with session.get("https://genius.com/api/search/song", params=params) as r:
         if not r.ok:
             return

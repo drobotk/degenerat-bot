@@ -3,7 +3,7 @@ import json
 import pathlib
 import logging
 from dataclasses import dataclass
-from typing import Optional, Any
+from typing import Any
 
 import discord
 
@@ -59,7 +59,7 @@ class Youtube:
         formats.sort(key=lambda a: a["abr"])
         return [formats[-2]]
 
-    def extract_yt_url(self, text: str) -> Optional[str]:
+    def extract_yt_url(self, text: str) -> str | None:
         m = self.re_link.search(text)
         return f"https://www.youtube.com/watch?v={m.group(1)}" if m else None
 
@@ -85,14 +85,14 @@ class Youtube:
             self.log.error(f"Search error: {e.__class__.__name__}: {e}")
             return []
 
-        renderers: Optional[list[dict[str, Any]]] = traverse_obj(data, ("twoColumnSearchResultsRenderer", "primaryContents", "sectionListRenderer", "contents", ..., "itemSectionRenderer", "contents", ..., "videoRenderer"))  # type: ignore (no idea how to type correctly)
+        renderers: list[dict[str, Any]] | None = traverse_obj(data, ("twoColumnSearchResultsRenderer", "primaryContents", "sectionListRenderer", "contents", ..., "itemSectionRenderer", "contents", ..., "videoRenderer"))  # type: ignore (no idea how to type correctly)
         if not renderers:
             self.log.error(f"Search error: traverse_obj returned nothing")
             return []
 
         result = []
         for ren in renderers:
-            titles: Optional[list[str]] = traverse_obj(ren, ("title", "runs", ..., "text"))  # type: ignore (no idea how to type correctly)
+            titles: list[str] | None = traverse_obj(ren, ("title", "runs", ..., "text"))  # type: ignore (no idea how to type correctly)
             if not titles:
                 continue
 

@@ -2,7 +2,7 @@ from io import BytesIO
 import json
 import logging
 import re
-from typing import Any, Optional
+from typing import Any
 from PIL import Image, ImageSequence
 
 import discord
@@ -64,7 +64,7 @@ class YTPosts(commands.Cog):
                 self.log.error(f"{e.url} {err.__class__.__name__}: {err}")
                 continue
 
-            post: Optional[dict[str, Any]] = traverse_obj(data, ("twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "itemSectionRenderer", "contents", 0, "backstagePostThreadRenderer", "post", "backstagePostRenderer"))  # type: ignore (no idea how to type correctly)
+            post: dict[str, Any] | None = traverse_obj(data, ("twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "itemSectionRenderer", "contents", 0, "backstagePostThreadRenderer", "post", "backstagePostRenderer"))  # type: ignore (no idea how to type correctly)
             if not post:
                 self.log.error(f"{e.url} traverse_obj returned None")
                 continue
@@ -73,23 +73,23 @@ class YTPosts(commands.Cog):
                 color=message.guild.me.color if message.guild else None
             )
 
-            author: Optional[str] = traverse_obj(post, ("authorText", "runs", 0, "text"))  # type: ignore (no idea how to type correctly)
+            author: str | None = traverse_obj(post, ("authorText", "runs", 0, "text"))  # type: ignore (no idea how to type correctly)
             if author:
-                thumbnail: Optional[str] = traverse_obj(post, ("authorThumbnail", "thumbnails", 0, "url"))  # type: ignore (no idea how to type correctly)
+                thumbnail: str | None = traverse_obj(post, ("authorThumbnail", "thumbnails", 0, "url"))  # type: ignore (no idea how to type correctly)
                 if thumbnail:
                     thumbnail = "https:" + thumbnail
 
-                urls: Optional[list[str]] = traverse_obj(post, ("authorEndpoint", (("commandMetadata", "webCommandMetadata", "url"), ("browseEndpoint", "canonicalBaseUrl"))))  # type: ignore (no idea how to type correctly)
+                urls: list[str] | None = traverse_obj(post, ("authorEndpoint", (("commandMetadata", "webCommandMetadata", "url"), ("browseEndpoint", "canonicalBaseUrl"))))  # type: ignore (no idea how to type correctly)
                 embed.set_author(
                     name=author,
                     icon_url=thumbnail,
                     url=f"https://www.youtube.com{urls[0]}" if urls else None,
                 )
 
-            texts: Optional[list[str]] = traverse_obj(post, ("contentText", "runs", ..., "text"))  # type: ignore (no idea how to type correctly)
+            texts: list[str] | None = traverse_obj(post, ("contentText", "runs", ..., "text"))  # type: ignore (no idea how to type correctly)
             embed.description = dots_after("".join(texts), 4096) if texts else None
 
-            images: Optional[list[dict[str, Any]]] = traverse_obj(post, ("backstageAttachment", "backstageImageRenderer", "image", "thumbnails"))  # type: ignore (no idea how to type correctly)
+            images: list[dict[str, Any]] | None = traverse_obj(post, ("backstageAttachment", "backstageImageRenderer", "image", "thumbnails"))  # type: ignore (no idea how to type correctly)
             if images:
                 images.sort(key=lambda x: x["width"])
                 url = images[-1]["url"]
@@ -127,16 +127,16 @@ class YTPosts(commands.Cog):
                         files.append(discord.File(gif, fn))
                         embed.set_image(url=f"attachment://{fn}")
 
-            poll: Optional[dict[str, Any]] = traverse_obj(post, ("backstageAttachment", "pollRenderer"))  # type: ignore (no idea how to type correctly)
+            poll: dict[str, Any] | None = traverse_obj(post, ("backstageAttachment", "pollRenderer"))  # type: ignore (no idea how to type correctly)
             if poll:
-                votes: Optional[str] = traverse_obj(poll, ("totalVotes", "simpleText"))  # type: ignore (no idea how to type correctly)
+                votes: str | None = traverse_obj(poll, ("totalVotes", "simpleText"))  # type: ignore (no idea how to type correctly)
                 choices: list[str] = traverse_obj(poll, ("choices", ..., "text", "runs", 0, "text")) or []  # type: ignore (no idea how to type correctly)
                 embed.add_field(
                     name=f"Ankieta: {votes}",
                     value="\n".join([f"🔹 {c}" for c in choices]),
                 )
 
-            likes: Optional[str] = traverse_obj(post, ("voteCount", "simpleText"))  # type: ignore (no idea how to type correctly)
+            likes: str | None = traverse_obj(post, ("voteCount", "simpleText"))  # type: ignore (no idea how to type correctly)
             if likes:
                 embed.set_footer(text=f"👍 {likes}")
 
