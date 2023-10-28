@@ -43,6 +43,7 @@ class Triggers(commands.Cog):
             r"(?:^| )jak pan jezus powiedzia(?:l|ł) ?\?+?$",
             "*Tak jak Pan Jezus powiedział*",
         )
+        self.add_trigger(r"^\d*$", "Wiela???")
 
         self.spelling = {
             "muj": "_*mój_",
