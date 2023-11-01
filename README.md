@@ -1,3 +1,3 @@
 # degenerat-bot
 
-Bartek to spoko gość
+Bartek to 💀
