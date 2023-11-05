@@ -16,7 +16,7 @@ class ReEmbed(commands.Cog):
 
         self.patterns: dict[str, str | None] = {
             r"https:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels)\/(.{11})": r"https://www.instagram.com/reel/\1",
-            r"https:\/\/(?:www\.)?reddit\.com\/r\/.+?\/comments\/.+?\/": None,
+            r"https:\/\/(?:www\.)?reddit\.com\/r\/.+?\/(?:comment)?s\/.*": None,
         }
 
         self.ydl_params = {
