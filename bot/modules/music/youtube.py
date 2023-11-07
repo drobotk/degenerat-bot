@@ -7,7 +7,7 @@ from typing import Any
 
 import discord
 
-from yt_dlp import YoutubeDL
+import yt_dlp
 from yt_dlp.utils import traverse_obj
 
 from ...bot import DegeneratBot
@@ -31,12 +31,12 @@ class Youtube:
     def __init__(self):
         self.log: logging.Logger = logging.getLogger(__name__)
 
-        params = {
-            "no_color": True,
-            "format": self.format_selector,
-            "logger": self.log,
-        }
-        self.ydl = YoutubeDL(params)
+        _, _, _, params = yt_dlp.parse_options(
+            ("--no-colors", "--sponsorblock-remove", "music_offtopic")
+        )
+
+        params.update({"format": self.format_selector, "logger": self.log})
+        self.ydl = yt_dlp.YoutubeDL(params)
 
         self.limit_mb = 100
 
@@ -154,6 +154,14 @@ class Youtube:
         success, _ = await self.bot.loop.run_in_executor(
             None, lambda: self.ydl.dl(filename, info)
         )
+
+        try:
+            await self.bot.loop.run_in_executor(
+                None, lambda: self.ydl.post_process(filename, info)
+            )
+        except Exception as err:
+            self.log.error(f"YoutubeDL.post_process: {err.__class__.__name__}: {err}")
+
         if not success:
             e.title = "**Wystąpił błąd podczas pobierania pliku**"
             e.color = discord.Colour.red()
