@@ -31,11 +31,20 @@ class Youtube:
     def __init__(self):
         self.log: logging.Logger = logging.getLogger(__name__)
 
+        download_path: str = f"./{__name__}/download"
+        pathlib.Path(download_path).mkdir(parents=True, exist_ok=True)
+
         _, _, _, params = yt_dlp.parse_options(
             ("--no-colors", "--sponsorblock-remove", "music_offtopic")
         )
 
-        params.update({"format": self.format_selector, "logger": self.log})
+        params.update(
+            {
+                "format": self.format_selector,
+                "logger": self.log,
+                "outtmpl": f"{download_path}/%(id)s.%(ext)s",
+            }
+        )
         self.ydl = yt_dlp.YoutubeDL(params)
 
         self.limit_mb = 100
@@ -45,9 +54,6 @@ class Youtube:
         )
 
         self.re_json: re.Pattern[str] = re.compile(r">var ytInitialData = (\{.+?\});<")
-
-        self.download_path: str = f"./{__name__}/download"
-        pathlib.Path(self.download_path).mkdir(parents=True, exist_ok=True)
 
     def format_selector(self, ctx: dict) -> list[dict]:
         formats: list[dict] = ctx["formats"]
@@ -123,7 +129,7 @@ class Youtube:
                 None, lambda: self.ydl.extract_info(url, download=False)
             )
             if not info:
-                raise Exception("info is None")
+                raise Exception("YoutubeDL.extract_info: no info")
 
             title: str = info["title"]
             filesize: int = info["filesize"]
@@ -150,10 +156,16 @@ class Youtube:
         e.title = "Pobierańsko..."
         await reply(embed=e)
 
-        filename = f"{self.download_path}/{self.ydl.prepare_filename(info, outtmpl='%(id)s.%(ext)s')}"
+        filename = self.ydl.prepare_filename(info)
         success, _ = await self.bot.loop.run_in_executor(
             None, lambda: self.ydl.dl(filename, info)
         )
+
+        if not success:
+            e.title = "**Wystąpił błąd podczas pobierania pliku**"
+            e.color = discord.Colour.red()
+            await interaction.edit_original_response(embed=e)
+            return
 
         try:
             await self.bot.loop.run_in_executor(
@@ -161,12 +173,6 @@ class Youtube:
             )
         except Exception as err:
             self.log.error(f"YoutubeDL.post_process: {err.__class__.__name__}: {err}")
-
-        if not success:
-            e.title = "**Wystąpił błąd podczas pobierania pliku**"
-            e.color = discord.Colour.red()
-            await interaction.edit_original_response(embed=e)
-            return
 
         titles = []
         if "artist" in info and "track" in info:

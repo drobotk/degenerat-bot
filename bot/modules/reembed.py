@@ -19,15 +19,25 @@ class ReEmbed(commands.Cog):
             r"https:\/\/(?:www\.)?reddit\.com\/r\/.+?\/(?:comment)?s\/.*": None,
         }
 
-        self.ydl_params = {
-            "no_color": True,
-            "logger": self.log,
-        }
+        download_path: str = f"./{__name__}/download"
+        pathlib.Path(download_path).mkdir(parents=True, exist_ok=True)
 
-        self.download_path: str = f"./{__name__}/download"
-        pathlib.Path(self.download_path).mkdir(parents=True, exist_ok=True)
+        self.ydl = YoutubeDL(
+            params={
+                "no_color": True,
+                "logger": self.log,
+                "outtmpl": f"{download_path}/%(id)s.%(ext)s",
+            }
+        )
 
         self.processed_messages: list[int] = []
+
+    def _download(self, url: str) -> str:
+        info = self.ydl.extract_info(url)
+        return self.ydl.prepare_filename(info)
+
+    def download(self, url: str):
+        return self.bot.loop.run_in_executor(None, lambda: self._download(url))
 
     async def process_message(self, message: discord.Message):
         files: list[discord.File] = []
@@ -51,21 +61,11 @@ class ReEmbed(commands.Cog):
 
             self.log.info(url)
 
-            params = {
-                **self.ydl_params,
-                "outtmpl": f"{self.download_path}/%(id)s.%(ext)s",
-            }
-
-            def download():
-                with YoutubeDL(params=params) as ydl:
-                    info = ydl.extract_info(url)
-                    return ydl.prepare_filename(info)
-
             try:
-                filename = await self.bot.loop.run_in_executor(None, download)
+                filename = await self.download(url)
                 if not filename:
                     raise Exception
-            except:
+            except Exception:
                 self.log.error(f"{url} failed to download")
                 continue
 
