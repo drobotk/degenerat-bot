@@ -1,4 +1,5 @@
 import re
+import os
 import json
 import pathlib
 import logging
@@ -144,35 +145,42 @@ class Youtube:
             await reply(embed=e)
             return
 
+        e.title = "Odtwarzanie" if vc.is_standby else "Dodano do kolejki"
         e.description = title
         e.set_thumbnail(url=thumb)
 
-        if filesize > self.limit_mb * 1_000_000:
-            e.title = f"**Rozmiar pliku przekracza rozsądny limit {self.limit_mb}MB**"
-            e.color = discord.Colour.red()
-            await reply(embed=e)
-            return
-
-        e.title = "Pobierańsko..."
-        await reply(embed=e)
-
         filename = self.ydl.prepare_filename(info)
-        success, _ = await self.bot.loop.run_in_executor(
-            None, lambda: self.ydl.dl(filename, info)
-        )
 
-        if not success:
-            e.title = "**Wystąpił błąd podczas pobierania pliku**"
-            e.color = discord.Colour.red()
-            await interaction.edit_original_response(embed=e)
-            return
+        if os.path.exists(filename):
+            msg = await reply(embed=e)
+        else:
+            if filesize > self.limit_mb * 1_000_000:
+                e.title = f"**Rozmiar pliku przekracza rozsądny limit {self.limit_mb}MB**"
+                e.color = discord.Colour.red()
+                await reply(embed=e)
+                return
 
-        try:
-            await self.bot.loop.run_in_executor(
-                None, lambda: self.ydl.post_process(filename, info)
+            e.title = "Pobierańsko..."
+            await reply(embed=e)
+            
+            success, _ = await self.bot.loop.run_in_executor(
+                None, lambda: self.ydl.dl(filename, info)
             )
-        except Exception as err:
-            self.log.error(f"YoutubeDL.post_process: {err.__class__.__name__}: {err}")
+
+            if not success:
+                e.title = "**Wystąpił błąd podczas pobierania pliku**"
+                e.color = discord.Colour.red()
+                await interaction.edit_original_response(embed=e)
+                return
+
+            try:
+                await self.bot.loop.run_in_executor(
+                    None, lambda: self.ydl.post_process(filename, info)
+                )
+            except Exception as err:
+                self.log.error(f"YoutubeDL.post_process: {err.__class__.__name__}: {err}")
+                
+            msg = await interaction.edit_original_response(embed=e)
 
         titles = []
         if "artist" in info and "track" in info:
@@ -187,8 +195,5 @@ class Youtube:
 
         titles.append(title)
         titles = list(dict.fromkeys([self.clean_title(t) for t in titles]))
-
-        e.title = "Odtwarzanie" if vc.is_standby else "Dodano do kolejki"
-        msg = await interaction.edit_original_response(embed=e)
 
         await vc.add_entry(filename, opus=True, titles=titles, message=msg)
