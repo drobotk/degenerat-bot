@@ -61,6 +61,8 @@ class ReEmbed(commands.Cog):
 
             self.log.info(url)
 
+            await message.channel.typing()
+
             try:
                 filename = await self.download(url)
                 if not filename:

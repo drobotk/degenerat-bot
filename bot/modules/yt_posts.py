@@ -37,6 +37,8 @@ class YTPosts(commands.Cog):
 
             self.log.info(e.url)
 
+            await message.channel.typing()
+
             async with self.bot.session.get(
                 e.url,
                 cookies={
