@@ -137,21 +137,19 @@ class Youtube:
             thumb: str = info["thumbnail"]
 
         except Exception as err:
-            e = discord.Embed(
-                title="**Wystąpił błąd**",
-                description=f"{err.__class__.__name__}: {err}",
-                color=discord.Colour.red(),
-            )
+            e.title = "**Wystąpił błąd**"
+            e.description = f"{err.__class__.__name__}: {err}"
+            e.color = discord.Colour.red()
             await reply(embed=e)
             return
 
-        e.title = "Odtwarzanie" if vc.is_standby else "Dodano do kolejki"
         e.description = title
         e.set_thumbnail(url=thumb)
 
         filename = self.ydl.prepare_filename(info)
 
         if os.path.exists(filename):
+            e.title = "Odtwarzanie" if vc.is_standby else "Dodano do kolejki"
             msg = await reply(embed=e)
         else:
             if filesize > self.limit_mb * 1_000_000:
@@ -183,6 +181,8 @@ class Youtube:
                 self.log.error(
                     f"YoutubeDL.post_process: {err.__class__.__name__}: {err}"
                 )
+
+            e.title = "Odtwarzanie" if vc.is_standby else "Dodano do kolejki"
 
             msg = await interaction.edit_original_response(embed=e)
 
