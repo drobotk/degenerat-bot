@@ -155,14 +155,16 @@ class Youtube:
             msg = await reply(embed=e)
         else:
             if filesize > self.limit_mb * 1_000_000:
-                e.title = f"**Rozmiar pliku przekracza rozsądny limit {self.limit_mb}MB**"
+                e.title = (
+                    f"**Rozmiar pliku przekracza rozsądny limit {self.limit_mb}MB**"
+                )
                 e.color = discord.Colour.red()
                 await reply(embed=e)
                 return
 
             e.title = "Pobierańsko..."
             await reply(embed=e)
-            
+
             success, _ = await self.bot.loop.run_in_executor(
                 None, lambda: self.ydl.dl(filename, info)
             )
@@ -178,8 +180,10 @@ class Youtube:
                     None, lambda: self.ydl.post_process(filename, info)
                 )
             except Exception as err:
-                self.log.error(f"YoutubeDL.post_process: {err.__class__.__name__}: {err}")
-                
+                self.log.error(
+                    f"YoutubeDL.post_process: {err.__class__.__name__}: {err}"
+                )
+
             msg = await interaction.edit_original_response(embed=e)
 
         titles = []
