@@ -11,7 +11,7 @@ from ..bot import DegeneratBot
 class TTTState(Enum):
     Gameplay = auto()
     XWon = auto()
-    OWon = auto
+    OWon = auto()
     Tie = auto()
 
 
