@@ -29,7 +29,7 @@ class Triggers(commands.Cog):
 
         self.add_trigger(r"(?:^| )c?huj$", "ci w dupę")
         self.add_trigger(
-            r"(?:^| )można ?\?+?$", "*Można. Jak najbardziej. Jeszcze jak.*"
+            r"(?:^| )mo(?:z|ż)na ?\?+?$", "*Można. Jak najbardziej. Jeszcze jak.*"
         )
         self.add_trigger(
             r"(?:^| )dobrze ?\?+?$",
