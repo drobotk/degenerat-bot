@@ -17,6 +17,7 @@ class ReEmbed(commands.Cog):
         self.patterns: dict[str, str | None] = {
             r"https:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels)\/(.{11})": r"https://www.instagram.com/reel/\1",
             r"https:\/\/(?:www\.)?reddit\.com\/r\/.+?\/(?:comment)?s\/.*": None,
+            r"https:\/\/(?:www\.)?facebook\.com\/(?:reel|share\/r)\/.*": None,
         }
 
         download_path: str = f"./{__name__}/download"
