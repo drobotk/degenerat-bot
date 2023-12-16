@@ -68,6 +68,5 @@ async def setup(bot: DegeneratBot):
     except ValueError:
         return logging.fatal("USER_ID environment variable is not an integer!")
     except TypeError:
-        return logging.fatal("USER_ID environment variable is not set!")
-
+        return logging.fatal("GUILD_ID environment variable is not set!")
     await bot.add_cog(Bartek(bot, guild_id, user_id))
