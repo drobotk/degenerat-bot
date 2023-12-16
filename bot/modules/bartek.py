@@ -10,7 +10,7 @@ PATH = "data/polityka/"
 
 
 class Bartek(commands.Cog):
-    def __init__(self, bot: DegeneratBot, guild_id, user_id):
+    def __init__(self, bot: DegeneratBot, guild_id: int, user_id: int):
         self.bot: DegeneratBot = bot
 
         self.guild_id = guild_id
@@ -22,7 +22,8 @@ class Bartek(commands.Cog):
 
         for file in os.listdir(PATH):
             with open(PATH + file, "r") as f:
-                file_content = f.readline().split(",")[:-1]
+                file_content = f.readline().split(",")
+                file_content = filter(None, file_content)
                 self.blacklist.update(file_content)
 
     @commands.Cog.listener()
@@ -57,17 +58,16 @@ class Bartek(commands.Cog):
 async def setup(bot: DegeneratBot):
     try:
         guild_id = int(os.getenv("GUILD_ID"))
-    except:
+    except ValueError:
         return logging.fatal("GUILD_ID environment variable is not an integer!")
-
-    if not guild_id:
-        return logging.fatal("GUILD_ID environment variable not set!")
+    except TypeError:
+        return logging.fatal("GUILD_ID environment variable is not set!")
 
     try:
         user_id = int(os.getenv("USER_ID"))
-    except:
+    except ValueError:
         return logging.fatal("USER_ID environment variable is not an integer!")
+    except TypeError:
+        return logging.fatal("USER_ID environment variable is not set!")
 
-    if not user_id:
-        return logging.fatal("USER_ID environment variable not set!")
     await bot.add_cog(Bartek(bot, guild_id, user_id))
