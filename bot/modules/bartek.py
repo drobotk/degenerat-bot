@@ -1,12 +1,14 @@
+import os
 import logging
+from datetime import date
+
 import discord
 from discord.ext import commands
 
 from ..bot import DegeneratBot
-import os
-from datetime import date
 
 PATH = "data/polityka/"
+
 
 class Bartek(commands.Cog):
     def __init__(self, bot: DegeneratBot, guild_id: int, user_id: int):
@@ -16,8 +18,8 @@ class Bartek(commands.Cog):
         self.user_id = user_id
 
         self.bartek_count = 0
-        self.blacklist = set()
-        self.previousDate = date.today()
+        self.blacklist: set[str] = set()
+        self.previous_date = date.today()
 
         for file in os.listdir(PATH):
             with open(PATH + file, "r") as f:
@@ -27,24 +29,21 @@ class Bartek(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot or not message.content:
+        if message.author.bot or message.author.id != self.user_id:
             return
 
-        if message.content.startswith(self.bot.command_prefix):  # type: ignore (error: Argument of type "PrefixType[BotT@__init__]" cannot be assigned to parameter "__prefix" of type "str | tuple[str, ...]" in function "startswith"  - bruh)
+        if not message.guild or message.guild.id != self.guild_id:
             return
 
-        if message.guild.id != self.guild_id:
-            return
-
-        if message.author.id != self.user_id:
+        if not message.content or message.content.startswith(self.bot.command_prefix):  # type: ignore (error: Argument of type "PrefixType[BotT@__init__]" cannot be assigned to parameter "__prefix" of type "str | tuple[str, ...]" in function "startswith"  - bruh)
             return
 
         if not set(message.content.lower().split()).intersection(self.blacklist):
             return
 
-        if self.previousDate != date.today():
+        if self.previous_date != date.today():
             self.bartek_count = 0
-            self.previousDate = date.today()
+            self.previous_date = date.today()
 
         if self.bartek_count >= 2:
             await message.delete()
@@ -55,18 +54,24 @@ class Bartek(commands.Cog):
 
 
 async def setup(bot: DegeneratBot):
-    try:
-        guild_id = int(os.getenv("GUILD_ID"))
-    except ValueError:
-        return logging.fatal("GUILD_ID environment variable is not an integer!")
-    except TypeError:
-        return logging.fatal("GUILD_ID environment variable is not set!")
+    log = logging.getLogger(__name__)
+
+    guild_id = os.getenv("BARTEK_GUILD_ID")
+    if not guild_id:
+        return log.error("BARTEK_GUILD_ID environment variable is not set!")
 
     try:
-        user_id = int(os.getenv("USER_ID"))
+        guild_id = int(guild_id)
     except ValueError:
-        return logging.fatal("USER_ID environment variable is not an integer!")
-    except TypeError:
-        return logging.fatal("USER_ID environment variable is not set!")
+        return log.error("BARTEK_GUILD_ID environment variable is not an integer!")
+
+    user_id = os.getenv("BARTEK_USER_ID")
+    if not user_id:
+        return log.error("BARTEK_USER_ID environment variable is not set!")
+
+    try:
+        user_id = int(user_id)
+    except ValueError:
+        return log.error("BARTEK_USER_ID environment variable is not an integer!")
 
     await bot.add_cog(Bartek(bot, guild_id, user_id))
