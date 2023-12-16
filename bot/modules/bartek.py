@@ -8,7 +8,6 @@ from datetime import date
 
 PATH = "data/polityka/"
 
-
 class Bartek(commands.Cog):
     def __init__(self, bot: DegeneratBot, guild_id: int, user_id: int):
         self.bot: DegeneratBot = bot
@@ -68,5 +67,6 @@ async def setup(bot: DegeneratBot):
     except ValueError:
         return logging.fatal("USER_ID environment variable is not an integer!")
     except TypeError:
-        return logging.fatal("GUILD_ID environment variable is not set!")
+        return logging.fatal("USER_ID environment variable is not set!")
+
     await bot.add_cog(Bartek(bot, guild_id, user_id))
