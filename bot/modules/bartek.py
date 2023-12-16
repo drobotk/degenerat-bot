@@ -8,6 +8,8 @@ from datetime import date
 
 PATH = "data/polityka/"
 
+PATH = "data/polityka/"
+
 
 class Bartek(commands.Cog):
     def __init__(self, bot: DegeneratBot, guild_id: int, user_id: int):
@@ -15,7 +17,11 @@ class Bartek(commands.Cog):
 
         self.guild_id = guild_id
         self.user_id = user_id
+        self.guild_id = guild_id
+        self.user_id = user_id
 
+        self.bartek_count = 0
+        self.blacklist = set()
         self.bartek_count = 0
         self.blacklist = set()
         self.previousDate = date.today()
@@ -35,8 +41,10 @@ class Bartek(commands.Cog):
             return
 
         if message.guild.id != self.guild_id:
+        if message.guild.id != self.guild_id:
             return
 
+        if message.author.id != self.user_id:
         if message.author.id != self.user_id:
             return
 
@@ -45,12 +53,16 @@ class Bartek(commands.Cog):
 
         if self.previousDate != date.today():
             self.bartek_count = 0
+            self.bartek_count = 0
             self.previousDate = date.today()
 
+        if self.bartek_count >= 2:
         if self.bartek_count >= 2:
             await message.delete()
             return
 
+        await message.add_reaction("🤓")
+        self.bartek_count += 1
         await message.add_reaction("🤓")
         self.bartek_count += 1
 
