@@ -3,65 +3,71 @@ import discord
 from discord.ext import commands
 
 from ..bot import DegeneratBot
-
-import csv
 import os
 from datetime import date
 
-PATH = "./data/polityka"
+PATH = "data/polityka/"
+
 
 class Bartek(commands.Cog):
-    def __init__(self, bot: DegeneratBot):
+    def __init__(self, bot: DegeneratBot, guild_id, user_id):
         self.bot: DegeneratBot = bot
 
-        guild_id = os.getenv("GUILD_ID")
-        if not guild_id:
-            return logging.fatal("GUILD_ID environment variable not set!")
+        self.guild_id = guild_id
+        self.user_id = user_id
 
-        bartek_id = os.getenv("BARTEK_ID")
-        if not bartek_id:
-            return logging.fatal("BARTEK_ID environment variable not set!")
-
-        self.bartekCount = 0
-        self.blacklist = []
+        self.bartek_count = 0
+        self.blacklist = set()
         self.previousDate = date.today()
 
         for file in os.listdir(PATH):
-            with open(f"{PATH}/{file}", "r") as f:
-                self.blacklist.extend(list(csv.reader(f, delimiter=";"))[0][:-1])
-
-        self.blacklist = set(self.blacklist)
+            with open(PATH + file, "r") as f:
+                file_content = f.readline().split(",")[:-1]
+                self.blacklist.update(file_content)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        print(message.content)
-
         if message.author.bot or not message.content:
             return
 
         if message.content.startswith(self.bot.command_prefix):  # type: ignore (error: Argument of type "PrefixType[BotT@__init__]" cannot be assigned to parameter "__prefix" of type "str | tuple[str, ...]" in function "startswith"  - bruh)
             return
 
-        if message.guild.id != guild_id:
+        if message.guild.id != self.guild_id:
             return
 
-        if message.author.id != bartek_id:
+        if message.author.id != self.user_id:
             return
 
         if not set(message.content.lower().split()).intersection(self.blacklist):
             return
 
         if self.previousDate != date.today():
-            self.bartekCount = 0
+            self.bartek_count = 0
             self.previousDate = date.today()
 
-        if self.bartekCount >= 2:
+        if self.bartek_count >= 2:
             await message.delete()
             return
 
-        self.bartekCount += 1
-        return
+        await message.add_reaction("🤓")
+        self.bartek_count += 1
 
 
 async def setup(bot: DegeneratBot):
-    await bot.add_cog(Bartek(bot))
+    try:
+        guild_id = int(os.getenv("GUILD_ID"))
+    except:
+        return logging.fatal("GUILD_ID environment variable is not an integer!")
+
+    if not guild_id:
+        return logging.fatal("GUILD_ID environment variable not set!")
+
+    try:
+        user_id = int(os.getenv("USER_ID"))
+    except:
+        return logging.fatal("USER_ID environment variable is not an integer!")
+
+    if not user_id:
+        return logging.fatal("USER_ID environment variable not set!")
+    await bot.add_cog(Bartek(bot, guild_id, user_id))
