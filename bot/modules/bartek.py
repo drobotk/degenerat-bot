@@ -11,8 +11,9 @@ PATH = "data/polityka/"
 
 
 class Bartek(commands.Cog):
-    def __init__(self, bot: DegeneratBot, guild_id: int, user_id: int):
+    def __init__(self, bot: DegeneratBot, log: logging.Logger, guild_id: int, user_id: int):
         self.bot: DegeneratBot = bot
+        self.log: logging.Logger = log
 
         self.guild_id = guild_id
         self.user_id = user_id
@@ -26,6 +27,8 @@ class Bartek(commands.Cog):
                 file_content = f.readline().split(",")
                 file_content = filter(None, file_content)
                 self.blacklist.update(file_content)
+
+        self.log.info(f"Loaded {len(self.blacklist)} blacklisted keywords")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -41,6 +44,8 @@ class Bartek(commands.Cog):
         if not set(message.content.lower().split()).intersection(self.blacklist):
             return
 
+        self.log.info(f"Offending message: {message.content}")
+        
         if self.previous_date != date.today():
             self.bartek_count = 0
             self.previous_date = date.today()
@@ -74,4 +79,4 @@ async def setup(bot: DegeneratBot):
     except ValueError:
         return log.error("BARTEK_USER_ID environment variable is not an integer!")
 
-    await bot.add_cog(Bartek(bot, guild_id, user_id))
+    await bot.add_cog(Bartek(bot, log, guild_id, user_id))
