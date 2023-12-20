@@ -9,6 +9,8 @@ from ..bot import DegeneratBot
 
 PATH = "data/polityka/"
 
+TEST = "BTH"
+
 
 class Bartek(commands.Cog):
     def __init__(self, bot: DegeneratBot, log: logging.Logger, guild_id: int, user_id: int):
