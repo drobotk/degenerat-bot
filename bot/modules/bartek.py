@@ -11,7 +11,9 @@ PATH = "data/polityka/"
 
 
 class Bartek(commands.Cog):
-    def __init__(self, bot: DegeneratBot, log: logging.Logger, guild_id: int, user_id: int):
+    def __init__(
+        self, bot: DegeneratBot, log: logging.Logger, guild_id: int, user_id: int
+    ):
         self.bot: DegeneratBot = bot
         self.log: logging.Logger = log
 
@@ -41,11 +43,14 @@ class Bartek(commands.Cog):
         if not message.content or message.content.startswith(self.bot.command_prefix):  # type: ignore (error: Argument of type "PrefixType[BotT@__init__]" cannot be assigned to parameter "__prefix" of type "str | tuple[str, ...]" in function "startswith"  - bruh)
             return
 
-        if not set(message.content.lower().split()).intersection(self.blacklist):
+        for offending in self.blacklist:
+            if offending.lower() in message.content.lower():
+                break
+        else:
             return
 
         self.log.info(f"Offending message: {message.content}")
-        
+
         if self.previous_date != date.today():
             self.bartek_count = 0
             self.previous_date = date.today()
