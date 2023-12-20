@@ -41,7 +41,10 @@ class Bartek(commands.Cog):
         if not message.content or message.content.startswith(self.bot.command_prefix):  # type: ignore (error: Argument of type "PrefixType[BotT@__init__]" cannot be assigned to parameter "__prefix" of type "str | tuple[str, ...]" in function "startswith"  - bruh)
             return
 
-        if not set(message.content.lower().split()).intersection(self.blacklist):
+        for offending in self.blacklist:
+            if offending.lower() in message.content.lower():
+                break
+        else:
             return
 
         self.log.info(f"Offending message: {message.content}")
