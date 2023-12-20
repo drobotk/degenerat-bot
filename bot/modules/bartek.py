@@ -9,11 +9,11 @@ from ..bot import DegeneratBot
 
 PATH = "data/polityka/"
 
-TEST = "BTH"
-
 
 class Bartek(commands.Cog):
-    def __init__(self, bot: DegeneratBot, log: logging.Logger, guild_id: int, user_id: int):
+    def __init__(
+        self, bot: DegeneratBot, log: logging.Logger, guild_id: int, user_id: int
+    ):
         self.bot: DegeneratBot = bot
         self.log: logging.Logger = log
 
@@ -27,7 +27,7 @@ class Bartek(commands.Cog):
         for file in os.listdir(PATH):
             with open(PATH + file, "r") as f:
                 file_content = f.readline().split(",")
-                file_content = filter(None, file_content)
+                file_content_filtered = filter(None, file_content)
                 self.blacklist.update(file_content)
 
         self.log.info(f"Loaded {len(self.blacklist)} blacklisted keywords")
@@ -47,7 +47,7 @@ class Bartek(commands.Cog):
             return
 
         self.log.info(f"Offending message: {message.content}")
-        
+
         if self.previous_date != date.today():
             self.bartek_count = 0
             self.previous_date = date.today()
