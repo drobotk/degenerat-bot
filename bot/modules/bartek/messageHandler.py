@@ -12,6 +12,7 @@ class MessageHandler:
     def isOffending(self, message: discord.Message) -> bool:
         if message.content:
             if self.textHandler.isOffending(message.content):
+                self.log.info(f"Offending message: {message.content}")
                 return True
             if "http" in message.content:
                 # todo
