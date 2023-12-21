@@ -5,7 +5,9 @@ from datetime import date
 import discord
 from discord.ext import commands
 
-from ..bot import DegeneratBot
+from .messageHandler import MessageHandler
+
+from ...bot import DegeneratBot
 
 PATH = "data/polityka/"
 
@@ -16,21 +18,13 @@ class Bartek(commands.Cog):
     ):
         self.bot: DegeneratBot = bot
         self.log: logging.Logger = log
+        self.handler: MessageHandler = MessageHandler(log, PATH)
 
         self.guild_id = guild_id
         self.user_id = user_id
 
         self.bartek_count = 0
-        self.blacklist: set[str] = set()
         self.previous_date = date.today()
-
-        for file in os.listdir(PATH):
-            with open(PATH + file, "r") as f:
-                file_content = f.readline().split(",")
-                file_content = filter(None, file_content)
-                self.blacklist.update(file_content)
-
-        self.log.info(f"Loaded {len(self.blacklist)} blacklisted keywords")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -40,16 +34,11 @@ class Bartek(commands.Cog):
         if not message.guild or message.guild.id != self.guild_id:
             return
 
-        if not message.content or message.content.startswith(self.bot.command_prefix):  # type: ignore (error: Argument of type "PrefixType[BotT@__init__]" cannot be assigned to parameter "__prefix" of type "str | tuple[str, ...]" in function "startswith"  - bruh)
+        if message.content.startswith(self.bot.command_prefix):  # type: ignore (error: Argument of type "PrefixType[BotT@__init__]" cannot be assigned to parameter "__prefix" of type "str | tuple[str, ...]" in function "startswith"  - bruh)
             return
 
-        for offending in self.blacklist:
-            if offending.lower() in message.content.lower():
-                break
-        else:
+        if not self.handler.isOffending(message):
             return
-
-        self.log.info(f"Offending message: {message.content}")
 
         if self.previous_date != date.today():
             self.bartek_count = 0
