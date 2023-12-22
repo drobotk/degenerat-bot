@@ -37,7 +37,7 @@ class Bartek(commands.Cog):
         if message.content.startswith(self.bot.command_prefix):  # type: ignore (error: Argument of type "PrefixType[BotT@__init__]" cannot be assigned to parameter "__prefix" of type "str | tuple[str, ...]" in function "startswith"  - bruh)
             return
 
-        if not self.handler.isOffending(message):
+        if not await self.handler.isOffending(message):
             return
 
         if self.previous_date != date.today():
