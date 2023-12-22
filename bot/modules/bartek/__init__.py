@@ -9,7 +9,7 @@ from .messageHandler import MessageHandler
 
 from ...bot import DegeneratBot
 
-PATH = "data/polityka/"
+PATH: str = "data/polityka/"
 
 
 class Bartek(commands.Cog):
@@ -20,11 +20,11 @@ class Bartek(commands.Cog):
         self.log: logging.Logger = log
         self.handler: MessageHandler = MessageHandler(log, PATH)
 
-        self.guild_id = guild_id
-        self.user_id = user_id
+        self.guild_id: int = guild_id
+        self.user_id: int = user_id
 
-        self.bartek_count = 0
-        self.previous_date = date.today()
+        self.bartek_count: int = 0
+        self.previous_date: date = date.today()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
