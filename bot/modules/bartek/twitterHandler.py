@@ -18,18 +18,18 @@ class TwitterHandler:
 
         twitter_page = BeautifulSoup(twitter_page_txt, "html.parser")
 
-        # print(twitter_page.prettify())
+        # bullshit for getting description
+        description_text = str(twitter_page.find_all("meta", property="og:description"))
 
-        # print(twitter_page.get_text())
-        print(twitter_page_txt)
-
-        return True
+        return self.textHandler.isOffending(description_text)
 
 
 if __name__ == "__main__":
     links = {
         "https://fxtwitter.com/i/status/1737831908795351359",
         "https://fxtwitter.com/i/status/1737542665028178158",
+        "https://fxtwitter.com/i/status/1737531507571376480",
+        "https://fxtwitter.com/i/status/1737468694916153618",
     }
 
     th = TextHandler(logging.getLogger(), "data/polityka/")
