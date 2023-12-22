@@ -22,7 +22,7 @@ class MessageHandler:
 
             return False
 
-        if message.attachments:
+        if message.attachments:  # TODO handling gif-ow
             for attachment in message.attachments:
                 if not attachment.filename.split(".")[-1] in {
                     "jpeg",
