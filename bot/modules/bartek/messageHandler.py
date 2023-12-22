@@ -13,12 +13,15 @@ class MessageHandler:
         if message.content:
             if self.textHandler.isOffending(message.content):
                 self.log.info(f"Offending message: {message.content}")
-                return True
+
             if "http" in message.content:
                 # todo
                 pass
 
             return False
+
         if message.attachments:
             # todo
             pass
+
+        return True
