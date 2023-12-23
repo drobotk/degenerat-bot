@@ -8,11 +8,12 @@ class TextHandler:
 
         self.blacklist: set[str] = set()
 
-        for file in os.listdir(path):
-            with open(path + file, "r") as f:
-                file_content = f.readline().split(",")
-                file_content = filter(None, file_content)
-                self.blacklist.update(file_content)
+        for file_name in os.listdir(path):
+            with open(path + file_name, "r") as file:
+                for line in file.readlines():
+                    file_content = line.split(",")
+                    file_content = filter(None, file_content)
+                    self.blacklist.update(file_content)
 
         self.log.info(f"Loaded {len(self.blacklist)} blacklisted keywords")
 
