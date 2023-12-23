@@ -2,6 +2,7 @@ import discord
 import logging
 from validators import url
 from .textHandler import TextHandler
+from .imageHandler import ImageHandler
 from .youtubeHandler import YoutubeHandler
 from .twitterHandler import TwitterHandler
 
@@ -11,6 +12,7 @@ class MessageHandler:
         self.log: logging.Logger = log
 
         self.textHandler: TextHandler = TextHandler(log, path)
+        self.imageHandler: ImageHandler = ImageHandler(log, self.textHandler)
         self.ytHandler: YoutubeHandler = YoutubeHandler(log, self.textHandler)
         self.twitterHandler: TwitterHandler = TwitterHandler()
 
