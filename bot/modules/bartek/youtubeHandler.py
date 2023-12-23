@@ -37,16 +37,3 @@ class YoutubeHandler:
         string_to_check = yt_page.title.string + description_text
 
         return self.textHandler.isOffending(string_to_check)
-
-
-# TODO usunac
-if __name__ == "__main__":
-    links = {
-        "https://www.youtube.com/watch?v=yMKAFwUfe3A",
-        "https://youtu.be/X-BE-Gq-D6U?si=13CjD_EeDp7wjprs",
-    }
-
-    th = TextHandler(logging.getLogger(), "data/polityka/")
-    yth = YoutubeHandler(logging.getLogger(), th)
-    for link in links:
-        print(yth.isOffending(link))
