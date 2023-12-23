@@ -19,6 +19,7 @@ class TextHandler:
     def isOffending(self, content: str) -> bool:
         for offending in self.blacklist:
             if offending.lower() in content.lower():
+                self.log.info(f"Offending message: {content}")
                 return True
         else:
             return False

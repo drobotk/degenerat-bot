@@ -21,8 +21,6 @@ class ImageHandler:
             return True
 
         if self.textHandler.isOffending(image_content):
-            self.log.info("Deleting image. Cause: Containts offending words.")
-            self.log.info(f"Detected text:\n{image_content}")
             return True
 
         return False

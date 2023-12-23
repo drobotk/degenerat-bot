@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from requests import get
 import logging
 
-from textHandler import TextHandler
+from .textHandler import TextHandler
 
 
 class TwitterHandler:
@@ -24,6 +24,7 @@ class TwitterHandler:
         return self.textHandler.isOffending(description_text)
 
 
+# TODO usunąć
 if __name__ == "__main__":
     links = {
         "https://fxtwitter.com/i/status/1737831908795351359",

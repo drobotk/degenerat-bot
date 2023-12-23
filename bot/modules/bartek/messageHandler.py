@@ -14,12 +14,12 @@ class MessageHandler:
         self.textHandler: TextHandler = TextHandler(log, path)
         self.imageHandler: ImageHandler = ImageHandler(log, self.textHandler)
         self.ytHandler: YoutubeHandler = YoutubeHandler(log, self.textHandler)
-        self.twitterHandler: TwitterHandler = TwitterHandler()
+        self.twitterHandler: TwitterHandler = TwitterHandler(log, self.textHandler)
 
     async def isOffending(self, message: discord.Message) -> bool:
         if message.content:
             if self.textHandler.isOffending(message.content):
-                self.log.info(f"Offending message: {message.content}")
+                return True
 
             # array of all words, including possible url
             words_of_message = message.content.split()
@@ -31,11 +31,13 @@ class MessageHandler:
                 # maybe it's youtube
                 if "youtu" in word:
                     if self.ytHandler.isOffending(word):
+                        self.log.info(f"Found offending Youtube link: {word}")
                         return True
 
                 # maybe it's twitter/x
                 elif "twitter" in word:
                     if self.twitterHandler.isOffending(word):
+                        self.log.info(f"Found offending Twitter (x) link: {word}")
                         return True
 
             return False

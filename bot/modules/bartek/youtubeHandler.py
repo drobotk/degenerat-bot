@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from requests import get
 import logging
 
-from textHandler import TextHandler
+from .textHandler import TextHandler
 
 
 class YoutubeHandler:
@@ -34,11 +34,12 @@ class YoutubeHandler:
             description_text += description_script[current_index]
             current_index += 1
 
-        string_to_check = yt_page.title.string + description_script
+        string_to_check = yt_page.title.string + description_text
 
         return self.textHandler.isOffending(string_to_check)
 
 
+# TODO usunac
 if __name__ == "__main__":
     links = {
         "https://www.youtube.com/watch?v=yMKAFwUfe3A",
