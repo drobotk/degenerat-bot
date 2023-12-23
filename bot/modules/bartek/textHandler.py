@@ -13,7 +13,7 @@ class TextHandler:
                 for line in file.readlines():
                     file_content = line.split(",")
                     file_content = filter(
-                        lambda x: True if x != None and x != "\n" else False,
+                        lambda x: x != None and x != "\n",
                         file_content,
                     )
                     self.blacklist.update(file_content)
