@@ -22,18 +22,3 @@ class TwitterHandler:
         description_text = str(twitter_page.find_all("meta", property="og:description"))
 
         return self.textHandler.isOffending(description_text)
-
-
-# TODO usunąć
-if __name__ == "__main__":
-    links = {
-        "https://fxtwitter.com/i/status/1737831908795351359",
-        "https://fxtwitter.com/i/status/1737542665028178158",
-        "https://fxtwitter.com/i/status/1737531507571376480",
-        "https://fxtwitter.com/i/status/1737468694916153618",
-    }
-
-    th = TextHandler(logging.getLogger(), "data/polityka/")
-    yth = TwitterHandler(logging.getLogger(), th)
-    for link in links:
-        print(yth.isOffending(link))
