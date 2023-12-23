@@ -5,6 +5,7 @@ from .textHandler import TextHandler
 from .imageHandler import ImageHandler
 from .youtubeHandler import YoutubeHandler
 from .twitterHandler import TwitterHandler
+from .genericUrlHandler import GenericUrlHandler
 
 
 class MessageHandler:
@@ -15,6 +16,9 @@ class MessageHandler:
         self.imageHandler: ImageHandler = ImageHandler(log, self.textHandler)
         self.ytHandler: YoutubeHandler = YoutubeHandler(log, self.textHandler)
         self.twitterHandler: TwitterHandler = TwitterHandler(log, self.textHandler)
+        self.genericUrlHandler: GenericUrlHandler = GenericUrlHandler(
+            log, self.textHandler
+        )
 
     async def isOffending(self, message: discord.Message) -> bool:
         if message.content:
@@ -39,6 +43,12 @@ class MessageHandler:
                     if self.twitterHandler.isOffending(word):
                         self.log.info(f"Found offending Twitter (x) link: {word}")
                         return True
+
+                # TODO instagram links handler
+
+                # for unhandled link use generic handler
+                else:
+                    return self.genericUrlHandler.isOffending(word)
 
             return False
 
