@@ -1,6 +1,6 @@
 import logging
 import easyocr
-from .textHandler import TextHandler
+from .text_handler import TextHandler
 
 MAX_LENGTH = 30
 

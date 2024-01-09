@@ -1,11 +1,11 @@
 import discord
 import logging
 from validators import url
-from .textHandler import TextHandler
-from .imageHandler import ImageHandler
-from .youtubeHandler import YoutubeHandler
-from .twitterHandler import TwitterHandler
-from .genericUrlHandler import GenericUrlHandler
+from .text_handler import TextHandler
+from .image_handler import ImageHandler
+from .youtubehandler import YoutubeHandler
+from .twitterhandler import TwitterHandler
+from .generic_url_handler import GenericUrlHandler
 
 
 class MessageHandler:
@@ -32,13 +32,11 @@ class MessageHandler:
                 if not url(word):
                     continue
 
-                # maybe it's youtube
                 if "youtu" in word:
                     if self.ytHandler.isOffending(word):
                         self.log.info(f"Found offending Youtube link: {word}")
                         return True
 
-                # maybe it's twitter/x
                 elif "twitter" in word:
                     if self.twitterHandler.isOffending(word):
                         self.log.info(f"Found offending Twitter (x) link: {word}")
@@ -46,7 +44,6 @@ class MessageHandler:
 
                 # TODO instagram links handler
 
-                # for unhandled link use generic handler
                 else:
                     return self.genericUrlHandler.isOffending(word)
 
