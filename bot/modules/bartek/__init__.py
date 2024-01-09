@@ -5,7 +5,7 @@ from datetime import date
 import discord
 from discord.ext import commands
 
-from .messageHandler import MessageHandler
+from .message_handler import MessageHandler
 
 from ...bot import DegeneratBot
 
