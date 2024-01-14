@@ -66,7 +66,7 @@ class Triggers(commands.Cog):
         }
 
         self.reaction_triggers: dict[re.Pattern, str] = {}
-        self.add_reaction_trigger("💀", "💀")
+        self.add_reaction_trigger("💀|czacha", "💀")
 
     def add_text_trigger(self, pattern: str, response: str):
         p = re.compile(pattern)
