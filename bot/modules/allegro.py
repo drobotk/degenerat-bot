@@ -144,7 +144,7 @@ class AllegroEmbed(commands.Cog):
                     f"{review_count} recenzj{review_count_suffix(review_count)}"
                 )
 
-            embed.add_field(name="Ocena", value=" | ".join(ratingItems))
+            embed.add_field(name="Ocena", value=" | ".join(ratingItems) or "brak")
 
             # here already for image ordering
             new_embeds.append(embed)
