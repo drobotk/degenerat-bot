@@ -11,7 +11,9 @@ PATH = "data/polityka/"
 
 
 class Bartek(commands.Cog):
-    def __init__(self, bot: DegeneratBot, log: logging.Logger, guild_id: int, user_id: int):
+    def __init__(
+        self, bot: DegeneratBot, log: logging.Logger, guild_id: int, user_id: int
+    ):
         self.bot: DegeneratBot = bot
         self.log: logging.Logger = log
 
@@ -45,7 +47,7 @@ class Bartek(commands.Cog):
             return
 
         self.log.info(f"Offending message: {message.content}")
-        
+
         if self.previous_date != date.today():
             self.bartek_count = 0
             self.previous_date = date.today()
