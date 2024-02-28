@@ -77,6 +77,8 @@ class AllegroEmbed(commands.Cog):
 
             self.log.info(url)
 
+            await message.channel.typing()
+
             async with self.bot.session.get(url) as r:
                 if not r.ok:
                     self.log.error(f"{url} status code {r.status}")
