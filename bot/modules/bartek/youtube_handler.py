@@ -1,7 +1,6 @@
-import aiohttp
+from bs4 import BeautifulSoup
+from requests import get
 import logging
-import re
-import json
 
 from .text_handler import TextHandler
 
@@ -11,23 +10,30 @@ class YoutubeHandler:
         self.textHandler: TextHandler = textHandler
         self.log: logging.Logger = log
 
-    async def isOffending(self, url: str) -> bool:
+    def isOffending(self, url: str) -> bool:
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as resp:
-                    yt_page_txt = await resp.text()
+            yt_page_txt = get(url)
         except:
             self.log.error("Bad url - youtube")
 
-        # pattern to hopefully recieve json with wanted data
-        re_json: re.Pattern[str] = re.compile(r">var ytInitialData = (\{.+?\});<")
-        json_data = json.loads(re_json.search(yt_page_txt).group(1))
+        yt_page = BeautifulSoup(yt_page_txt.text, "html.parser")
 
-        # 💀 and hope they wont change anything
-        string_to_check = json_data["contents"]["twoColumnWatchNextResults"]["results"]["results"
-        ]["contents"][0]["videoPrimaryInfoRenderer"]["title"]["runs"][0]["text"] # title
+        description_script = str(yt_page.find_all("script")[-5])
+        description_index = (
+            description_script.find("attributedDescriptionBodyText") + 43
+        )
 
-        string_to_check += " " + json_data["contents"]["twoColumnWatchNextResults"]["results"
-        ]["results"]["contents"][1]["videoSecondaryInfoRenderer"]["attributedDescription"]["content"]  # description
+        current_index = description_index
+        description_text = ""
+        while True:
+            if (
+                description_script[current_index] == '"'
+                and description_script[current_index - 1] != "\\"
+            ):
+                break
+            description_text += description_script[current_index]
+            current_index += 1
+
+        string_to_check = yt_page.title.string + description_text
 
         return self.textHandler.isOffending(string_to_check)
