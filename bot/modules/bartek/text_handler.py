@@ -13,17 +13,18 @@ class TextHandler:
                 for line in file.readlines():
                     file_content = line.split(",")
                     file_content = filter(
-                        lambda x: x != None and x != "\n",
+                        lambda x: x and x != "\n",
                         file_content,
                     )
-                    self.blacklist.update(file_content)
+                    self.blacklist.update(
+                        map(lambda x: x.lower, file_content)
+                    )  # sanity check for lowercase
 
         self.log.info(f"Loaded {len(self.blacklist)} blacklisted keywords")
 
     def isOffending(self, content: str) -> bool:
         for offending in self.blacklist:
-            if offending.lower() in content.lower():
+            if offending in content.lower():
                 self.log.info(f"Offending message: {offending}")
                 return True
-        else:
-            return False
+        return False
