@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from requests import get
+import aiohttp
 import logging
 
 from .textHandler import TextHandler
@@ -10,9 +10,12 @@ class TwitterHandler:
         self.log: logging.Logger = log
         self.textHandler: TextHandler = textHandler
 
-    def isOffending(self, url: str) -> bool:
+    async def isOffending(self, url: str) -> bool:
         try:
-            twitter_page_txt = get(url).text
+            async with aiohttp.ClientSession() as session:
+                twitter_page_resp = session.get(url)
+                twitter_page_txt = await twitter_page_resp.text()
+
         except:
             self.log.error("Bad url - twitter")
 
