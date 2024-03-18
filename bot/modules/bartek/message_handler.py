@@ -1,6 +1,6 @@
 import discord
 import logging
-from validators import url
+from ...utils import is_url
 from .text_handler import TextHandler
 from .image_handler import ImageHandler
 from .youtube_handler import YoutubeHandler
@@ -29,7 +29,7 @@ class MessageHandler:
             words_of_message = message.content.split()
             for word in words_of_message:
                 # check if url is valid
-                if not url(word):
+                if not is_url(word):
                     continue
 
                 if "youtu" in word:
