@@ -45,7 +45,6 @@ class MessageHandler:
                         return True
 
                 # TODO instagram links handler
-
                 # for unhandled link use generic handler
                 else:
                     return await self.genericUrlHandler.isOffending(word)
