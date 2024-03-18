@@ -3,7 +3,7 @@ import logging
 import re
 import json
 
-from .textHandler import TextHandler
+from .text_handler import TextHandler
 
 
 class YoutubeHandler:

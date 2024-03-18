@@ -1,11 +1,11 @@
 import discord
 import logging
 from ...utils import is_url
-from .textHandler import TextHandler
-from .imageHandler import ImageHandler
-from .youtubeHandler import YoutubeHandler
-from .twitterHandler import TwitterHandler
-from .genericUrlHandler import GenericUrlHandler
+from .text_handler import TextHandler
+from .image_handler import ImageHandler
+from .youtube_handler import YoutubeHandler
+from .twitter_handler import TwitterHandler
+from .generic_url_handler import GenericUrlHandler
 
 
 class MessageHandler:

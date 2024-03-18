@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import aiohttp
 import logging
 
-from .textHandler import TextHandler
+from .text_handler import TextHandler
 
 
 class GenericUrlHandler:

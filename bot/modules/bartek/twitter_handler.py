@@ -3,7 +3,7 @@ import logging
 import json
 import re
 
-from .textHandler import TextHandler
+from .text_handler import TextHandler
 
 
 class TwitterHandler:
