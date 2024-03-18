@@ -13,8 +13,8 @@ class TwitterHandler:
     async def isOffending(self, url: str) -> bool:
         try:
             async with aiohttp.ClientSession() as session:
-                twitter_page_resp = session.get(url)
-                twitter_page_txt = await twitter_page_resp.text()
+                async with session.get(url) as resp:
+                    twitter_page_txt = await resp.text()
 
         except:
             self.log.error("Bad url - twitter")
