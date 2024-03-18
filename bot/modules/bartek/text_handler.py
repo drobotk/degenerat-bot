@@ -17,7 +17,7 @@ class TextHandler:
                         file_content,
                     )
                     self.blacklist.update(
-                        map(lambda x: x.lower, file_content)
+                        map(lambda x: x.lower(), file_content)
                     )  # sanity check for lowercase
 
         self.log.info(f"Loaded {len(self.blacklist)} blacklisted keywords")
