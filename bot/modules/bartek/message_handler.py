@@ -3,8 +3,8 @@ import logging
 from validators import url
 from .text_handler import TextHandler
 from .image_handler import ImageHandler
-from .youtubehandler import YoutubeHandler
-from .twitterhandler import TwitterHandler
+from .youtube_handler import YoutubeHandler
+from .twitter_handler import TwitterHandler
 from .generic_url_handler import GenericUrlHandler
 
 
