@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from requests import get
+import aiohttp
 import logging
 
 from .textHandler import TextHandler
@@ -10,9 +10,11 @@ class GenericUrlHandler:
         self.textHandler: TextHandler = textHandler
         self.log: logging.Logger = log
 
-    def isOffending(self, url: str) -> bool:
+    async def isOffending(self, url: str) -> bool:
         try:
-            page_txt = get(url).text
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    page_txt = resp.text()
         except:
             self.log.error("Bad url - generic")
 
