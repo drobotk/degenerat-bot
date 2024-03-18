@@ -34,13 +34,13 @@ class MessageHandler:
 
                 # maybe it's youtube
                 if "youtu" in word:
-                    if self.ytHandler.isOffending(word):
+                    if await self.ytHandler.isOffending(word):
                         self.log.info(f"Found offending Youtube link: {word}")
                         return True
 
                 # maybe it's twitter/x
                 elif "twitter" in word:
-                    if self.twitterHandler.isOffending(word):
+                    if await self.twitterHandler.isOffending(word):
                         self.log.info(f"Found offending Twitter (x) link: {word}")
                         return True
 
@@ -48,7 +48,7 @@ class MessageHandler:
 
                 # for unhandled link use generic handler
                 else:
-                    return self.genericUrlHandler.isOffending(word)
+                    return await self.genericUrlHandler.isOffending(word)
 
             return False
 

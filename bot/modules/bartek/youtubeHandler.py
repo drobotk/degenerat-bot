@@ -24,6 +24,10 @@ class YoutubeHandler:
         json_data = json.loads(re_json.search(yt_page_txt).group(1))
 
         # 💀 and hope they wont change anything
-        string_to_check = json_data["contents"]["twoColumnWatchNextResults"]["results"]["results"]["contents"][1]["videoSecondaryInfoRenderer"]["attributedDescription"]["content"]
+        string_to_check = json_data["contents"]["twoColumnWatchNextResults"]["results"]["results"
+        ]["contents"][0]["videoPrimaryInfoRenderer"]["title"]["runs"][0]["text"] # title
+
+        string_to_check += " " + json_data["contents"]["twoColumnWatchNextResults"]["results"
+        ]["results"]["contents"][1]["videoSecondaryInfoRenderer"]["attributedDescription"]["content"]  # description
 
         return self.textHandler.isOffending(string_to_check)
