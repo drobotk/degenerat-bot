@@ -1,6 +1,7 @@
-from bs4 import BeautifulSoup
-from requests import get
+import aiohttp
 import logging
+import json
+import re
 
 from .text_handler import TextHandler
 
@@ -10,15 +11,22 @@ class TwitterHandler:
         self.log: logging.Logger = log
         self.textHandler: TextHandler = textHandler
 
-    def isOffending(self, url: str) -> bool:
+    async def isOffending(self, url: str) -> bool:
         try:
-            twitter_page_txt = get(url).text
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    "https://publish.twitter.com/oembed?url=" + url
+                ) as resp:  # returns json embed data
+                    twitter_embed_data_json = await resp.text()
+
         except:
             self.log.error("Bad url - twitter")
 
-        twitter_page = BeautifulSoup(twitter_page_txt, "html.parser")
+        twitter_data = json.loads(twitter_embed_data_json)
 
-        # bullshit for getting description
-        description_text = str(twitter_page.find_all("meta", property="og:description"))
+        # this wierd url returns a json with some embeded data
+        # i hope it will work
+        # author name + html from embed (there should be some description)
+        string_to_check = twitter_data["author_name"] + " " + twitter_data["html"]
 
-        return self.textHandler.isOffending(description_text)
+        return self.textHandler.isOffending(string_to_check)
