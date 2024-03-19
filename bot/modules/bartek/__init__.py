@@ -18,7 +18,7 @@ class Bartek(commands.Cog):
     ):
         self.bot: DegeneratBot = bot
         self.log: logging.Logger = log
-        self.handler: MessageHandler = MessageHandler(log, PATH)
+        self.handler: MessageHandler = MessageHandler(log, PATH, bot.session)
 
         self.guild_id: int = guild_id
         self.user_id: int = user_id
