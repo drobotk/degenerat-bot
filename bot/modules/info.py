@@ -22,7 +22,7 @@ class Info(commands.Cog):
         avatar = self.bot.user.avatar.url if self.bot.user.avatar else None  # type: ignore (bot.user will never be None here)
         e.set_author(name=str(self.bot.user), icon_url=avatar)
 
-        e.add_field(name="Stworzony przez", value="drobotk (RoboT#2675)", inline=False)
+        e.add_field(name="Stworzony przez", value="RoboT (drobotk)", inline=False)
         e.add_field(name="Serwery", value=len(self.bot.guilds))
 
         cmds = [
