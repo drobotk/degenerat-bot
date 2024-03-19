@@ -1,5 +1,6 @@
 import discord
 import logging
+import aiohttp
 from ...utils import is_url
 from .text_handler import TextHandler
 from .image_handler import ImageHandler
@@ -9,15 +10,19 @@ from .generic_url_handler import GenericUrlHandler
 
 
 class MessageHandler:
-    def __init__(self, log: logging.Logger, path: str) -> None:
+    def __init__(
+        self, log: logging.Logger, path: str, session: aiohttp.ClientSession
+    ) -> None:
         self.log: logging.Logger = log
 
         self.textHandler: TextHandler = TextHandler(log, path)
         self.imageHandler: ImageHandler = ImageHandler(log, self.textHandler)
-        self.ytHandler: YoutubeHandler = YoutubeHandler(log, self.textHandler)
-        self.twitterHandler: TwitterHandler = TwitterHandler(log, self.textHandler)
+        self.ytHandler: YoutubeHandler = YoutubeHandler(log, self.textHandler, session)
+        self.twitterHandler: TwitterHandler = TwitterHandler(
+            log, self.textHandler, session
+        )
         self.genericUrlHandler: GenericUrlHandler = GenericUrlHandler(
-            log, self.textHandler
+            log, self.textHandler, session
         )
 
     async def isOffending(self, message: discord.Message) -> bool:
@@ -33,19 +38,19 @@ class MessageHandler:
                     continue
 
                 if "youtu" in word:
-                    if self.ytHandler.isOffending(word):
+                    if await self.ytHandler.isOffending(word):
                         self.log.info(f"Found offending Youtube link: {word}")
                         return True
 
                 elif "twitter" in word:
-                    if self.twitterHandler.isOffending(word):
+                    if await self.twitterHandler.isOffending(word):
                         self.log.info(f"Found offending Twitter (x) link: {word}")
                         return True
 
                 # TODO instagram links handler
 
                 else:
-                    return self.genericUrlHandler.isOffending(word)
+                    return await self.genericUrlHandler.isOffending(word)
 
             return False
 
