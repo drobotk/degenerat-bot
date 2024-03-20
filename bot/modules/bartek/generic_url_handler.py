@@ -17,12 +17,12 @@ class GenericUrlHandler:
         self.session: aiohttp.ClientSession = session
 
     async def isOffending(self, url: str) -> bool:
-        try:
-            async with self.session.get(url) as resp:
-                page_txt: str = await resp.text()
-        except:
-            self.log.error("Bad url - generic")
-            return False
+
+        async with self.session.get(url) as resp:
+            if not resp.ok:
+                self.log.error(f"{url} status code {resp.status}")
+                return False
+            page_txt: str = await resp.text()
 
         page_text: str = BeautifulSoup(page_txt, "html.parser").get_text()
 
