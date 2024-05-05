@@ -4,7 +4,7 @@ git+https://github.com/yt-dlp/yt-dlp
 async_property
 aiohttp
 PyNaCl
-lxml
+lxml==5.1.1
 beautifulsoup4
 pyfiglet
 cowsay
