@@ -1,3 +1,4 @@
+import asyncio
 import os
 import logging
 import time
@@ -36,11 +37,17 @@ class DegeneratBot(commands.Bot):
         await self.load_extension("jishaku")
 
         path = __file__.replace("/bot.py", "")
-        for f in os.listdir(f"{path}/modules"):
-            if not f.startswith("_"):
-                ext = f.replace(".py", "")
-                self.log.info(f'Loading extension "{ext}"')
-                await self.load_extension(f"bot.modules.{ext}")
+        exts = [
+            f.replace(".py", "")
+            for f in os.listdir(f"{path}/modules")
+            if not f.startswith("_")
+        ]
+
+        async def _load(ext):
+            self.log.info(f'Loading extension "{ext}"')
+            await self.load_extension(f"bot.modules.{ext}")
+
+        await asyncio.gather(*(_load(ext) for ext in exts))
 
     async def close(self) -> None:
         if self.session:
