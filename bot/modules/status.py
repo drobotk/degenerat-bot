@@ -10,7 +10,6 @@ from ..bot import DegeneratBot
 class Status(commands.Cog):
     def __init__(self, bot: DegeneratBot):
         self.bot: DegeneratBot = bot
-        self.start_time = round(time.time())
 
     @app_commands.command(description="Status bota")
     async def status(self, interaction: discord.Interaction):
@@ -24,7 +23,9 @@ class Status(commands.Cog):
         if interaction.guild is not None:
             e.colour = interaction.guild.me.colour
 
-        e.add_field(name="Uruchomiony", value=f"<t:{self.start_time}:R>", inline=False)
+        e.add_field(
+            name="Uruchomiony", value=f"<t:{self.bot.start_time}:R>", inline=False
+        )
 
         e.add_field(
             name="Opóźnienie Websocketa",

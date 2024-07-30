@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 
 import discord
 from discord.ext import commands
@@ -21,6 +22,8 @@ class DegeneratBot(commands.Bot):
             message_content=True,
         )
         super().__init__(command_prefix=",", help_command=None, intents=intents)
+
+        self.start_time = round(time.time())
 
     async def setup_hook(self) -> None:
         self.session: aiohttp.ClientSession = aiohttp.ClientSession(
