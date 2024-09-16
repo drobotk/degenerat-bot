@@ -2,17 +2,17 @@ import json
 import logging
 import re
 from typing import Any
-from bs4 import BeautifulSoup
-from bs4.element import Tag
 
 import discord
 from discord.ext import commands
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 from yt_dlp.utils import traverse_obj
 
-from ..bot import DegeneratBot
+from ...bot import DegeneratBot
 
 PRELOAD_URL = "https://allegro.pl/"
-RE_LINK = re.compile(r"https:\/\/allegro\.pl\/oferta\/.+?(?:\s|$)")
+RE_LINK = re.compile(r"https:\/\/(?:www\.)?allegro\.pl\/oferta\/.+?(?:\s|$)")
 
 
 def get_tag_single_value(tag: Tag, key: str, default: Any = None) -> str | None:
@@ -38,7 +38,7 @@ def review_count_suffix(count: int) -> str:
     return "i"
 
 
-class AllegroEmbed(commands.Cog):
+class AllegroReEmbed(commands.Cog):
     def __init__(self, bot: DegeneratBot):
         self.bot: DegeneratBot = bot
         self.log: logging.Logger = logging.getLogger(__name__)
@@ -63,17 +63,15 @@ class AllegroEmbed(commands.Cog):
                     "Failed to preload Allegro cookies - requests will likely fail"
                 )
 
-    async def process_message(self, message: discord.Message):
-        urls: set[str] = {l.strip() for l in RE_LINK.findall(message.content)}
-        if not urls:
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot or not message.content:
             return
 
-        new_embeds: list[discord.Embed] = []
-        files: list[discord.File] = []
+        urls: set[str] = {l.strip() for l in RE_LINK.findall(message.content)}
 
         for url in urls:
-            if len(new_embeds) >= 10:
-                break
+            embeds: list[discord.Embed] = []
 
             self.log.info(url)
 
@@ -147,7 +145,7 @@ class AllegroEmbed(commands.Cog):
             embed.add_field(name="Ocena", value=" | ".join(ratingItems) or "brak")
 
             # here already for image ordering
-            new_embeds.append(embed)
+            embeds.append(embed)
 
             imgs: list[str] | None = traverse_obj(offer, ("images", ..., "url"))  # type: ignore (fuck u yt-dlp)
             if imgs:
@@ -155,21 +153,7 @@ class AllegroEmbed(commands.Cog):
                 for i in imgs[:3]:
                     e = discord.Embed(url=url)
                     e.set_image(url=i)
-                    new_embeds.append(e)
+                    embeds.append(e)
 
-        if new_embeds:
-            await message.reply(
-                embeds=new_embeds[:10], files=files, mention_author=False
-            )
-            await message.edit(suppress=True)
-
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        if message.author.bot or not message.content or message.embeds:
-            return
-
-        await self.process_message(message)
-
-
-async def setup(bot: DegeneratBot):
-    await bot.add_cog(AllegroEmbed(bot))
+            if embeds:
+                await message.reply(embeds=embeds, mention_author=False)

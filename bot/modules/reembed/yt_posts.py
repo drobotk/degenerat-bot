@@ -1,46 +1,48 @@
-from io import BytesIO
 import json
 import logging
 import re
+from io import BytesIO
 from typing import Any
-from PIL import Image, ImageSequence
 
 import discord
 from discord.ext import commands
-
-from ..bot import DegeneratBot
-from ..utils import dots_after
+from PIL import Image, ImageSequence
 from yt_dlp.utils import traverse_obj
 
+from ...bot import DegeneratBot
+from ... import utils
 
-class YTPosts(commands.Cog):
+
+RE_LINK: re.Pattern[str] = re.compile(
+    r"https:\/\/(?:www\.)?youtube\.com\/(?:post\/|channel\/[a-zA-Z0-9_\-]{24}\/community\?lb=)[a-zA-Z0-9_\-]{36}"
+)
+RE_JSON: re.Pattern[str] = re.compile(r">var ytInitialData = (\{.+?\});<")
+
+
+class YoutubePostsReEmbed(commands.Cog):
     def __init__(self, bot: DegeneratBot):
         self.bot: DegeneratBot = bot
         self.log: logging.Logger = logging.getLogger(__name__)
 
-        self.re_link: re.Pattern[str] = re.compile(
-            r"https:\/\/www\.youtube\.com\/(?:post\/|channel\/[a-zA-Z0-9_\-]{24}\/community\?lb=)[a-zA-Z0-9_\-]{36}"
-        )
-        self.re_json: re.Pattern[str] = re.compile(r">var ytInitialData = (\{.+?\});<")
-
         self.processed_messages: list[int] = []
 
-    async def process_message(self, message: discord.Message):
-        new_embeds: list[discord.Embed] = []
-        files: list[discord.File] = []
-        for e in message.embeds:
-            if not e.url:
-                continue
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot or not message.content:
+            return
 
-            if not self.re_link.fullmatch(e.url):
-                continue
+        urls: set[str] = {l.strip() for l in RE_LINK.findall(message.content)}
 
-            self.log.info(e.url)
+        for url in urls:
+            embeds: list[discord.Embed] = []
+            files: list[discord.File] = []
+
+            self.log.info(url)
 
             await message.channel.typing()
 
             async with self.bot.session.get(
-                e.url,
+                url,
                 cookies={
                     "SOCS": "CAESNQgDEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjMwMzE0LjA2X3AxGgJwbCACGgYIgNvOoAY",
                     "YSC": "LvvlUwB2Uko",
@@ -49,26 +51,26 @@ class YTPosts(commands.Cog):
                 },
             ) as r:
                 if not r.ok:
-                    self.log.error(f"{e.url} status code {r.status}")
+                    self.log.error(f"{url} status code {r.status}")
                     continue
 
                 text = await r.text()
 
-            m = self.re_json.search(text)
+            m = RE_JSON.search(text)
             if not m:
-                self.log.error(f"{e.url} didn't match ytInitialData ({r.url=})")
+                self.log.error(f"{url} didn't match ytInitialData ({r.url=})")
                 continue
 
             try:
                 # this is expensive af but regexing json is :moyai:
                 data = json.loads(m.group(1)).pop("contents")
             except (json.JSONDecodeError, KeyError) as err:
-                self.log.error(f"{e.url} {err.__class__.__name__}: {err}")
+                self.log.error(f"{url} {err.__class__.__name__}: {err}")
                 continue
 
             post: dict[str, Any] | None = traverse_obj(data, ("twoColumnBrowseResultsRenderer", "tabs", 0, "tabRenderer", "content", "sectionListRenderer", "contents", 0, "itemSectionRenderer", "contents", 0, "backstagePostThreadRenderer", "post", "backstagePostRenderer"))  # type: ignore (no idea how to type correctly)
             if not post:
-                self.log.error(f"{e.url} traverse_obj returned None")
+                self.log.error(f"{url} traverse_obj returned None")
                 continue
 
             embed = discord.Embed(
@@ -81,26 +83,32 @@ class YTPosts(commands.Cog):
                 if thumbnail:
                     thumbnail = "https:" + thumbnail
 
-                urls: list[str] | None = traverse_obj(post, ("authorEndpoint", (("commandMetadata", "webCommandMetadata", "url"), ("browseEndpoint", "canonicalBaseUrl"))))  # type: ignore (no idea how to type correctly)
+                author_urls: list[str] | None = traverse_obj(post, ("authorEndpoint", (("commandMetadata", "webCommandMetadata", "url"), ("browseEndpoint", "canonicalBaseUrl"))))  # type: ignore (no idea how to type correctly)
                 embed.set_author(
                     name=author,
                     icon_url=thumbnail,
-                    url=f"https://www.youtube.com{urls[0]}" if urls else None,
+                    url=(
+                        f"https://www.youtube.com{author_urls[0]}"
+                        if author_urls
+                        else None
+                    ),
                 )
 
             texts: list[str] | None = traverse_obj(post, ("contentText", "runs", ..., "text"))  # type: ignore (no idea how to type correctly)
-            embed.description = dots_after("".join(texts), 4096) if texts else None
+            embed.description = (
+                utils.dots_after("".join(texts), 4096) if texts else None
+            )
 
             images: list[dict[str, Any]] | None = traverse_obj(post, ("backstageAttachment", "backstageImageRenderer", "image", "thumbnails"))  # type: ignore (no idea how to type correctly)
             if images:
                 images.sort(key=lambda x: x["width"])
-                url = images[-1]["url"]
+                imgurl = images[-1]["url"]
 
-                async with self.bot.session.get(url) as r:
+                async with self.bot.session.get(imgurl) as r:
                     if not r.ok:
-                        self.log.error(f"{e.url} image fetch failed - wtf?")
+                        self.log.error(f"{url} image fetch failed - wtf?")
                     elif r.content_type != "image/webp":
-                        embed.set_image(url=url)
+                        embed.set_image(url=imgurl)
                     else:
                         webp = BytesIO(await r.read())
                         gif = BytesIO()
@@ -142,32 +150,7 @@ class YTPosts(commands.Cog):
             if likes:
                 embed.set_footer(text=f"👍 {likes}")
 
-            new_embeds.append(embed)
+            embeds.append(embed)
 
-        if new_embeds:
-            self.processed_messages.append(message.id)
-            await message.reply(embeds=new_embeds, files=files, mention_author=False)
-            await message.edit(suppress=True)
-
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        if message.author.bot or not message.content or not message.embeds:
-            return
-
-        await self.process_message(message)
-
-    @commands.Cog.listener()
-    async def on_message_edit(self, _: discord.Message, after: discord.Message):
-        if (
-            after.id in self.processed_messages
-            or after.author.bot
-            or not after.content
-            or not after.embeds
-        ):
-            return
-
-        await self.process_message(after)
-
-
-async def setup(bot: DegeneratBot):
-    await bot.add_cog(YTPosts(bot))
+            if embeds:
+                await message.reply(embeds=embeds, files=files, mention_author=False)
