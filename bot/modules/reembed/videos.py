@@ -9,7 +9,9 @@ from yt_dlp import YoutubeDL
 from ...bot import DegeneratBot
 
 RE_LINKS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"https:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels)\/.{11}"),
+    re.compile(
+        r"https:\/\/(?:www\.)?instagram\.com\/(?:.+?\/)?(?:p|reel|reels)\/.{11}"
+    ),
     re.compile(r"https:\/\/(?:www\.)?reddit\.com\/r\/.+?\/(?:comment)?s\/.+?(?:\s|$)"),
     re.compile(r"https:\/\/(?:www\.)?facebook\.com\/(?:reel|share\/r)\/.+?(?:\s|$)"),
     re.compile(r"https:\/\/vm\.tiktok\.com\/.{9}"),

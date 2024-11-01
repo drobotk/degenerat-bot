@@ -8,9 +8,7 @@ from discord import app_commands
 
 from ..bot import DegeneratBot
 
-KULA_COMMAND: str = (
-    """gimp -n -c -i -d -b '(gimp-file-load RUN-NONINTERACTIVE "{input}" "")' -b "(gimp-image-scale 1 (* (car (gimp-image-width 1)) (min (/ 500 (car (gimp-image-width 1)))(/ 500 (car (gimp-image-height 1))))) (* (car (gimp-image-height 1)) (min (/ 500 (car (gimp-image-width 1)))(/ 500 (car (gimp-image-height 1))))))" -b "(script-fu-spinning-globe 1 1 24 24 1 63 0 1)" -b '(file-gif-save 1 1 1 "{output}" "" FALSE TRUE 42 0)' -b "(gimp-quit TRUE)" """.strip()
-)
+KULA_COMMAND: str = """gimp -n -c -i -d -b '(gimp-file-load RUN-NONINTERACTIVE "{input}" "")' -b "(gimp-image-scale 1 (* (car (gimp-image-width 1)) (min (/ 500 (car (gimp-image-width 1)))(/ 500 (car (gimp-image-height 1))))) (* (car (gimp-image-height 1)) (min (/ 500 (car (gimp-image-width 1)))(/ 500 (car (gimp-image-height 1))))))" -b "(script-fu-spinning-globe 1 1 24 24 1 63 0 1)" -b '(file-gif-save 1 1 1 "{output}" "" FALSE TRUE 42 0)' -b "(gimp-quit TRUE)" """.strip()
 
 
 class Kula(commands.Cog):
