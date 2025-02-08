@@ -91,7 +91,7 @@ class VideosReEmbed(commands.Cog):
         before_p = pathlib.Path(before)
         after_p = before_p.with_stem(f"{before_p.stem}_h264")
         after = str(after_p)
-        if after_p.exists:
+        if after_p.exists():
             return after
 
         try:
