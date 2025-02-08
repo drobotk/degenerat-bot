@@ -115,7 +115,7 @@ class YoutubePostsReEmbed(commands.Cog):
                         with Image.open(webp) as image:
                             frames: list[Image.Image] = []
                             for frame in ImageSequence.Iterator(image):
-                                im2 = Image.new("RGB", frame.size, (255, 255, 255))
+                                im2 = Image.new("RGB", frame.size, (255, 255, 255))  # type: ignore - badly typed in pim
                                 bands = frame.split()
                                 mask = bands[3] if len(bands) > 3 else None
                                 im2.paste(frame, mask=mask)

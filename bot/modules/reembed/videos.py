@@ -1,10 +1,13 @@
+import json
 import logging
 import pathlib
 import re
+import subprocess
 
 import discord
 from discord.ext import commands
 from yt_dlp import YoutubeDL
+from yt_dlp.utils import traverse_obj
 
 from ...bot import DegeneratBot
 
@@ -13,7 +16,9 @@ RE_LINKS: tuple[re.Pattern[str], ...] = (
         r"https:\/\/(?:www\.)?instagram\.com\/(?:.+?\/)?(?:p|reel|reels)\/.{11}"
     ),
     re.compile(r"https:\/\/(?:www\.)?reddit\.com\/r\/.+?\/(?:comment)?s\/.+?(?:\s|$)"),
-    re.compile(r"https:\/\/(?:www\.)?facebook\.com\/(?:reel|share\/(?:r|v))\/.+?(?:\s|$)"),
+    re.compile(
+        r"https:\/\/(?:www\.)?facebook\.com\/(?:reel|share\/(?:r|v))\/.+?(?:\s|$)"
+    ),
     re.compile(r"https:\/\/vm\.tiktok\.com\/.{9}"),
     re.compile(r"https:\/\/(?:www\.)?tiktok\.com\/.+?\/video\/.+?(?:\s|$)"),
     re.compile(r"https:\/\/pin\.it\/.{9}"),
@@ -42,6 +47,77 @@ class VideosReEmbed(commands.Cog):
             None, lambda: self.ydl.prepare_filename(self.ydl.extract_info(url))
         )
 
+    def ffprobe_streams(self, filename: str):
+        return self.bot.loop.run_in_executor(
+            None,
+            lambda: subprocess.run(
+                (
+                    "ffprobe",
+                    "-v",
+                    "quiet",
+                    "-print_format",
+                    "json",
+                    "-show_streams",
+                    filename,
+                ),
+                stdout=subprocess.PIPE,
+                text=True,
+                check=True,
+            ),
+        )
+
+    def ffmpeg_transcode_to_h264(self, inp: str, out: str):
+        return self.bot.loop.run_in_executor(
+            None,
+            lambda: subprocess.run(
+                (
+                    "ffmpeg",
+                    "-v",
+                    "quiet",
+                    "-y",
+                    "-i",
+                    inp,
+                    "-c:a",
+                    "copy",
+                    "-c:v",
+                    "libx264",
+                    out,
+                ),
+                check=True,
+            ),
+        )
+
+    async def process_video(self, before: str) -> str:
+        try:
+            result = await self.ffprobe_streams(before)
+            data = json.loads(result.stdout)
+
+        except subprocess.CalledProcessError:
+            self.log.error(f"{before} ffprobe failed")
+            return before
+
+        except json.JSONDecodeError:
+            self.log.error(f"{before} ffprobe JSON parse failed")
+            return before
+
+        codecs: list[str] | None = traverse_obj(data, ("streams", ..., "codec_name"))  # type: ignore
+        if not codecs or "av1" not in codecs:
+            return before
+
+        self.log.info(f"{before} transcoding to h264")
+
+        before_p = pathlib.Path(before)
+        after = str(before_p.with_stem(f"{before_p.stem}_h264"))
+
+        try:
+            await self.ffmpeg_transcode_to_h264(before, after)
+
+        except subprocess.CalledProcessError:
+            self.log.error(f"{before} ffmpeg transcode failed")
+            return before
+
+        return after
+
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.bot or not message.content:
@@ -63,5 +139,7 @@ class VideosReEmbed(commands.Cog):
             except Exception:
                 self.log.error(f"{url} failed to download")
                 continue
+
+            filename = await self.process_video(filename)
 
             await message.reply(files=[discord.File(filename)], mention_author=False)
