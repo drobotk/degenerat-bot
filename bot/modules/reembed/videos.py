@@ -88,6 +88,12 @@ class VideosReEmbed(commands.Cog):
         )
 
     async def process_video(self, before: str) -> str:
+        before_p = pathlib.Path(before)
+        after_p = before_p.with_stem(f"{before_p.stem}_h264")
+        after = str(after_p)
+        if after_p.exists:
+            return after
+
         try:
             result = await self.ffprobe_streams(before)
             data = json.loads(result.stdout)
@@ -105,9 +111,6 @@ class VideosReEmbed(commands.Cog):
             return before
 
         self.log.info(f"{before} transcoding to h264")
-
-        before_p = pathlib.Path(before)
-        after = str(before_p.with_stem(f"{before_p.stem}_h264"))
 
         try:
             await self.ffmpeg_transcode_to_h264(before, after)
