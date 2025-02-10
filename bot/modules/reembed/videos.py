@@ -3,6 +3,7 @@ import logging
 import pathlib
 import re
 import subprocess
+from typing import Any
 
 import discord
 from discord.ext import commands
@@ -39,8 +40,23 @@ class VideosReEmbed(commands.Cog):
                 "no_color": True,
                 "logger": self.log,
                 "outtmpl": f"{download_path}/%(id)s.%(ext)s",
+                "format": self.format_selector,
             }
         )
+
+        self.default_format_selector = self.ydl.build_format_selector(
+            "bestvideo*+bestaudio/best"
+        )
+
+    def format_selector(self, ctx: dict[str, Any]):
+        formats: list[dict[str, Any]] = ctx["formats"]
+        fb_hd = discord.utils.find(
+            lambda f: f["format_id"] == "hd" and "fbcdn" in f["url"], formats
+        )
+        if fb_hd:
+            return [fb_hd]
+
+        return self.default_format_selector(ctx)
 
     def download(self, url: str):
         return self.bot.loop.run_in_executor(
