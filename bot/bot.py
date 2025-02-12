@@ -21,6 +21,7 @@ class DegeneratBot(commands.Bot):
             voice_states=True,
             messages=True,
             message_content=True,
+            reactions=True,
         )
         super().__init__(command_prefix=",", help_command=None, intents=intents)
 
