@@ -14,7 +14,7 @@ from ...bot import DegeneratBot
 
 RE_LINKS: tuple[re.Pattern[str], ...] = (
     re.compile(
-        r"https:\/\/(?:www\.)?instagram\.com\/(?:.+?\/)?(?:p|reel|reels)\/.{11}"
+        r"https:\/\/(?:www\.)?instagram\.com\/(?:.+?\/)?(?:p|reel|reels)\/.+?(?:\s|$)"
     ),
     re.compile(r"https:\/\/(?:www\.)?reddit\.com\/r\/.+?\/(?:comment)?s\/.+?(?:\s|$)"),
     re.compile(
