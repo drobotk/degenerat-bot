@@ -63,7 +63,7 @@ class VideosReEmbed(commands.Cog):
             None, lambda: self.ydl.prepare_filename(self.ydl.extract_info(url))
         )
 
-    def ffprobe_streams(self, filename: str):
+    def ffprobe_streams(self, inp: pathlib.Path):
         return self.bot.loop.run_in_executor(
             None,
             lambda: subprocess.run(
@@ -74,7 +74,7 @@ class VideosReEmbed(commands.Cog):
                     "-print_format",
                     "json",
                     "-show_streams",
-                    filename,
+                    inp.resolve(),
                 ),
                 stdout=subprocess.PIPE,
                 text=True,
@@ -82,7 +82,7 @@ class VideosReEmbed(commands.Cog):
             ),
         )
 
-    def ffmpeg_transcode_to_h264(self, inp: str, out: str):
+    def ffmpeg_transcode_to_h264(self, inp: pathlib.Path, out: pathlib.Path):
         return self.bot.loop.run_in_executor(
             None,
             lambda: subprocess.run(
@@ -92,22 +92,20 @@ class VideosReEmbed(commands.Cog):
                     "quiet",
                     "-y",
                     "-i",
-                    inp,
+                    inp.resolve(),
                     "-c:a",
                     "copy",
                     "-c:v",
                     "libx264",
-                    out,
+                    out.resolve(),
                 ),
                 check=True,
             ),
         )
 
-    async def process_video(self, before: str) -> str:
-        before_p = pathlib.Path(before)
-        after_p = before_p.with_stem(f"{before_p.stem}_h264")
-        after = str(after_p)
-        if after_p.exists():
+    async def process_video(self, before: pathlib.Path) -> pathlib.Path:
+        after = before.with_stem(f"{before.stem}_h264")
+        if after.exists():
             return after
 
         try:
@@ -155,10 +153,14 @@ class VideosReEmbed(commands.Cog):
                 filename = await self.download(url)
                 if not filename:
                     raise Exception
+
+                filepath = pathlib.Path(filename)
+                if not filepath.exists():
+                    raise Exception
             except Exception:
                 self.log.error(f"{url} failed to download")
                 continue
 
-            filename = await self.process_video(filename)
+            filepath = await self.process_video(filepath)
 
-            await message.reply(files=[discord.File(filename)], mention_author=False)
+            await message.reply(files=[discord.File(filepath)], mention_author=False)
