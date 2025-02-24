@@ -163,4 +163,12 @@ class VideosReEmbed(commands.Cog):
 
             filepath = await self.process_video(filepath)
 
-            await message.reply(files=[discord.File(filepath)], mention_author=False)
+            try:
+                await message.reply(
+                    files=[discord.File(filepath)], mention_author=False
+                )
+
+            except discord.HTTPException as e:
+                if e.code == 40005:
+                    self.log.info(f"{url} file too big")
+                    await message.add_reaction("🇺🇸")
