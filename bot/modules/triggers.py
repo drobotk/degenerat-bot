@@ -73,7 +73,7 @@ class Triggers(commands.Cog):
                 r"(?:^|\W)jak pan jezus powiedzia(?:l|ł)(?:$|\W)",
                 "*Tak jak Pan Jezus powiedział*",
             ),
-            Trigger(TriggerType.TEXT_TEXT, r"(?:^|\W)\d*$", "Wiela???"),
+            Trigger(TriggerType.TEXT_TEXT, r"^\d*$", "Wiela???"),
             Trigger(TriggerType.TEXT_REACTION, "💀|czacha", "💀"),
             Trigger(TriggerType.REACTION_REACTION, "💀", "💀"),
         ]
