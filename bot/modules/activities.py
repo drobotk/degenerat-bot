@@ -11,34 +11,21 @@ class Activities(commands.Cog):
         self.bot: DegeneratBot = bot
 
         self.activities = [
-            discord.Game("tomb rajder"),
-            discord.Game("Hentai Nazi"),
-            discord.Game("Ventti z Drabikiem"),
-            discord.Game("My Summer Car"),
-            discord.Activity(type=discord.ActivityType.watching, name="czeskie porno"),
             discord.Activity(
-                type=discord.ActivityType.watching, name="piotrovice.cc/item4.html"
+                type=discord.ActivityType.watching, name="https://youtu.be/GJDNkVDGM_s"
             ),
             discord.Activity(
-                type=discord.ActivityType.watching, name="fish spinning for 68 years"
-            ),
-            discord.Activity(type=discord.ActivityType.watching, name="jak bartek sra"),
-            discord.Activity(
-                type=discord.ActivityType.watching, name="bartek walking meme.mp4"
+                type=discord.ActivityType.watching, name="https://youtu.be/Kg-HHXuOBlw"
             ),
             discord.Activity(
-                type=discord.ActivityType.listening, name="Young Leosia - Jungle Girl"
+                type=discord.ActivityType.listening, name="https://open.spotify.com/track/4brp8oXYkKJtkJWYuUaZ5T"
             ),
             discord.Activity(
-                type=discord.ActivityType.listening, name="Young Leosia - Szklanki"
+                type=discord.ActivityType.listening, name="https://open.spotify.com/track/5jFlj0Gzkk7mxdi8e4IlXx"
             ),
             discord.Activity(
-                type=discord.ActivityType.listening, name="Dream - Mask (Sus Remix)"
+                type=discord.ActivityType.listening, name="https://open.spotify.com/track/3oNKjHYfg4HAP1ivjUit9n"
             ),
-            discord.Activity(
-                type=discord.ActivityType.listening, name="loud indian 10h bass boosted"
-            ),
-            discord.Activity(type=discord.ActivityType.listening, name="loud arabic"),
         ]
 
         self.update.start()
