@@ -78,7 +78,7 @@ class Triggers(commands.Cog):
             Trigger(TriggerType.REACTION_REACTION, "💀", "💀"),
             Trigger(
                 TriggerType.TEXT_TEXT,
-                r"(?:^|\W)(?:solid.+?|snake|w(?:a|ą)(?:z|ż)|metal ?gear|metalowa ?przek(?:ł|l)adnia|invisible|nie ?widzia(?:l|ł).+?|invincible|m ?g ?s)(?:$|\W)",
+                r"(?i)(?:solid.*|snake|w(?:a|ą)(?:z|ż)|metal ?gear|metalowa ?przek(?:ł|l)adnia|invisible|nie ?widzia(?:l|ł).*|invincible|m ?g ?s)\b",
                 "https://media.discordapp.net/attachments/713452179436077229/1316894797256196196/IE40lPkma2UTQZmaX_AEapEt8tke4FwgPN0Hha_RcfE.gif?ex=6852951a&is=6851439a&hm=07d5168887a428947f1d40786775873b0e4720dfe8e72087f58cf259943b6c16&="
             ),
         ]
