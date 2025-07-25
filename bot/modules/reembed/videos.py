@@ -18,7 +18,7 @@ RE_LINKS: tuple[re.Pattern[str], ...] = (
     ),
     re.compile(r"https:\/\/(?:www\.)?reddit\.com\/.*?(?:\s|$)"),
     re.compile(
-        r"https:\/\/(?:www\.)?facebook\.com\/.*?(share|reel|video).*?(?:\s|$)"
+        r"https:\/\/(?:www\.)?facebook\.com\/.*?(?:share|reel|video).*?(?:\s|$)"
     ),
     re.compile(r"https:\/\/(?:www\.|vm\.)?tiktok\.com\/.*?(?:\s|$)"),
     re.compile(r"https:\/\/pin\.it\/.*?(?:\s|$)"),
