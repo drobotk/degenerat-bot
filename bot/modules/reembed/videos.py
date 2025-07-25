@@ -151,26 +151,22 @@ class VideosReEmbed(commands.Cog):
             try:
                 filename = await self.download(url)
                 if not filename:
-                    raise Exception
+                    raise Exception("Failed to download")
 
                 filepath = pathlib.Path(filename)
                 if not filepath.exists():
-                    raise Exception
-            except Exception:
-                self.log.error(f"{url} failed to download")
-                continue
+                    raise Exception(f"{filename} does not exist")
 
-            filepath = await self.process_video(filepath)
+                filepath = await self.process_video(filepath)
 
-            try:
                 await message.reply(
                     files=[discord.File(filepath)], mention_author=False
                 )
-
-            except discord.HTTPException as e:
-                if e.code == 40005:
-                    self.log.info(f"{url} file too big")
-                    await message.add_reaction("❌")
+                
+            except Exception as e:
+                self.log.error(f"{url} {e.__class__.__name__}: {e}")
+                await message.add_reaction("❌")
+                continue
 
             else:
                 await message.edit(suppress=True)
