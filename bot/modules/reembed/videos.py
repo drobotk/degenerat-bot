@@ -170,4 +170,7 @@ class VideosReEmbed(commands.Cog):
             except discord.HTTPException as e:
                 if e.code == 40005:
                     self.log.info(f"{url} file too big")
-                    await message.add_reaction("🇺🇸")
+                    await message.add_reaction("❌")
+
+            else:
+                await message.edit(suppress=True)
