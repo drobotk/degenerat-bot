@@ -14,16 +14,15 @@ from ...bot import DegeneratBot
 
 RE_LINKS: tuple[re.Pattern[str], ...] = (
     re.compile(
-        r"https:\/\/(?:www\.)?instagram\.com\/(?:.+?\/)?(?:p|reel|reels)\/.+?(?:\s|$)"
+        r"https:\/\/(?:www\.)?instagram\.com\/.*?(?:\s|$)"
     ),
-    re.compile(r"https:\/\/(?:www\.)?reddit\.com\/r\/.+?\/(?:comment)?s\/.+?(?:\s|$)"),
+    re.compile(r"https:\/\/(?:www\.)?reddit\.com\/.*?(?:\s|$)"),
     re.compile(
-        r"https:\/\/(?:www\.)?facebook\.com\/(?:reel|share\/(?:r|v))\/.+?(?:\s|$)"
+        r"https:\/\/(?:www\.)?facebook\.com\/.*?(share|reel|video).*?(?:\s|$)"
     ),
-    re.compile(r"https:\/\/vm\.tiktok\.com\/.{9}"),
-    re.compile(r"https:\/\/(?:www\.)?tiktok\.com\/.+?\/video\/.+?(?:\s|$)"),
-    re.compile(r"https:\/\/pin\.it\/.{9}"),
-    re.compile(r"https:\/\/(?:www\.)?pinterest\.com\/pin\/\d{15}"),
+    re.compile(r"https:\/\/(?:www\.|vm\.)?tiktok\.com\/.*?(?:\s|$)"),
+    re.compile(r"https:\/\/pin\.it\/.*?(?:\s|$)"),
+    re.compile(r"https:\/\/(?:www\.)?pinterest\.com\/pin\/.*?(?:\s|$)"),
 )
 
 
