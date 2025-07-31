@@ -1,4 +1,5 @@
 import logging
+from asyncio.exceptions import TimeoutError
 
 import discord
 from discord.ext import commands
@@ -115,10 +116,13 @@ class Music(commands.Cog, Youtube):
                 "**Musisz być połączony z kanałem głosowym**", ephemeral=True
             )
 
-        vc = await self.get_client_for_channels(
-            interaction.user.voice.channel, interaction.channel  # type: ignore (command is guild only, user will always be a Member here; channel will never be None here)
-        )
-        if not vc:
+        try:
+            vc = await self.get_client_for_channels(
+                interaction.user.voice.channel, interaction.channel  # type: ignore (command is guild only, user will always be a Member here; channel will never be None here)
+            )
+            if not vc:
+                raise TimeoutError
+        except TimeoutError:
             return await interaction.response.send_message("**Nie udało się połączyć**")
 
         await interaction.response.defer()
