@@ -36,7 +36,7 @@ class Youtube:
         pathlib.Path(download_path).mkdir(parents=True, exist_ok=True)
 
         _, _, _, params = yt_dlp.parse_options(
-            ("--no-colors", "--sponsorblock-remove", "music_offtopic")
+            ("--no-colors", "--sponsorblock-remove", "music_offtopic", "--remote-components", "ejs:github")
         )
 
         params.update(
