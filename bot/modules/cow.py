@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+import time
 
 import cowsay
 
@@ -16,7 +17,7 @@ class Cow(commands.Cog):
         await interaction.response.defer()
 
         async with self.bot.session.get(
-            "https://evilinsult.com/generate_insult.php?lang=en&type=json"
+            f"https://evilinsult.com/generate_insult.php?lang=en&type=json&_={int(time.time() * 1000)}"
         ) as r:
             if not r.ok:
                 await interaction.followup.send(
